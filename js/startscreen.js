@@ -5,9 +5,10 @@ const loading = document.getElementById('loading');
 
 let spriteSheet = null;
 let groundImage = null;
+let doorImage = null;
 let gameStarted = false;
 let assetsLoaded = 0;
-const totalAssets = 2;
+const totalAssets = 3;
 
 // Game state
 const player = {
@@ -92,6 +93,17 @@ function loadAssets() {
         loading.innerHTML = '<h2>⚠️ Error</h2><p>Could not load ground image.<br>Make sure ground.png is in assets/sprites/</p>';
     };
     ground.src = './assets/sprites/ground.png';
+
+    const door = new Image();
+    door.onload = () => {
+        doorImage = door;
+        assetsLoaded++;
+        checkAssetsLoaded();
+    };
+    door.onerror = () => {
+        loading.innerHTML = '<h2>⚠️ Error</h2><p>Could not load door image.</p>';
+    };
+    door.src = './assets/sprites/door.png';
 }
 
 function checkAssetsLoaded() {
@@ -219,32 +231,18 @@ function drawGround() {
 
 function drawDoors() {
     for (let door of doors) {
-        // Door body
-        ctx.fillStyle = door.color;
-        ctx.fillRect(door.x, door.y, door.width, door.height);
-        
-        // Door frame
-        ctx.strokeStyle = '#e94560';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(door.x, door.y, door.width, door.height);
-        
-        // Door handle
-        ctx.fillStyle = '#ffd700';
-        ctx.beginPath();
-        ctx.arc(door.x + door.width - 12, door.y + door.height / 2, 4, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Label
+        ctx.drawImage(doorImage, door.x, door.y, door.width, door.height);
+
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 10px monospace';
         ctx.textAlign = 'center';
         ctx.fillText(door.label, door.x + door.width / 2, door.y - 10);
-        
-        // Glow effect if near
-        if (nearDoor === door) {
-            ctx.strokeStyle = '#ffd700';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(door.x - 5, door.y - 5, door.width + 10, door.height + 10);
+        if (nearDoor === door){
+            ctx.save();
+            ctx.globalAlpha= 0.6;
+            ctx.filter='brightness(1.5) drop-shadow(0 0 10px #ffd700)';
+            ctx.drawImage(doorImage, door.x, door.y, door.width, door.height);
+            ctx.restore();
         }
     }
 }
