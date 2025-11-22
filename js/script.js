@@ -6,7 +6,7 @@ function typeWriter() {
     if (i < fullText.length) {
         typingElement.textContent += fullText.charAt(i);
         i++;
-        setTimeout(typeWriter, 40);
+        setTimeout(typeWriter, 50);
     } else {
         typingElement.classList.add('finished');
     }
@@ -17,6 +17,5 @@ setTimeout(typeWriter, 500);
 
 // Button click to go to another page
 document.getElementById('startButton').addEventListener('click', function() {
-    window.location.href = 'nextpage.html';
-
+    window.location.href = 'startscreen.html';
 });
