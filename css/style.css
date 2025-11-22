@@ -1,0 +1,124 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(180deg, #000000 0%, #1a1f3a 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+
+.container {
+    display: flex;
+    align-items: flex-start; /* top alignment */
+    justify-content: space-between;
+    gap: 40px;
+    padding: 40px;
+}
+
+.text-content {
+    font-size: 24px;
+    line-height: 1.6;
+    max-width: 600px;
+}
+
+.typing-text {
+    display: inline;
+    border-right: 3px solid #7dd3fc;
+    animation: blink 0.7s step-end infinite;
+}
+
+.typing-text.finished {
+    border-right: none;
+    animation: none;
+}
+
+@keyframes blink {
+    50% {
+        border-color: transparent;
+    }
+}
+
+.button-container {
+    position: relative;
+    margin-left: 50px;
+    margin-top: 20px;
+    display: inline-block;
+}
+
+.retro-button {
+    position: relative;
+    top: 4px;
+    width: 200px;
+    height: 80px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    filter: brightness(1);
+}
+
+.retro-button:hover {
+    filter: brightness(0.90);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+}
+
+.retro-button:active {
+    filter: brightness(0.8);
+    transform: translateY(2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.button-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    font-weight: bold;
+    color: #2d5016;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    user-select: none;
+}
+
+.button-container:active .button-text {
+    transform: translate(-50%, calc(-50% + 2px));
+}
+
+.button-container:hover .button-border {
+    transform: translate(-50%, calc(-50% - 2px));
+}
+.button-container:active .button-border {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    transform: translate(-50%, calc(-50% + 1px));
+}
+
+.button-border {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.size-indicator {
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0ea5e9;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+}
