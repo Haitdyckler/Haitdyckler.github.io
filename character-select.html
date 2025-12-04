@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Your Character</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        #shareSpriteBtn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ffd700, #e94560);
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+            display: none;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        #shareSpriteBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 215, 0, 0.6);
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        h1 {
+            font-size: 48px;
+            text-align: center;
+            color: #e94560;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+            letter-spacing: 4px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 30px;
+            align-items: stretch;
+        }
+
+        .characters-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            row-gap: 4px;
+            column-gap: 8px;
+            max-height: 741px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .characters-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .characters-grid::-webkit-scrollbar-track {
+            background: rgba(15, 52, 96, 0.3);
+            border-radius: 4px;
+        }
+
+        .characters-grid::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 4px;
+        }
+
+        .character-card {
+            background: rgba(15, 52, 96, 0.3);
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            padding: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;  
+            width: 160px;
+            position: relative;
+        }
+
+        .character-card:hover {
+            transform: scale(1.05);
+            border-color: #e94560;
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+            background: rgba(15, 52, 96, 0.5);
+        }
+
+        .character-card.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            background: rgba(15, 52, 96, 0.6);
+        }
+
+        .character-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ffd700;
+            color: #1a1a2e;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .character-preview {
+            display: block;
+            margin-bottom: 8px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .character-card h3 {
+            font-size: 12px;
+            color: #e94560;
+            text-align: center;
+        }
+
+        .upload-card {
+            background: rgba(233, 69, 96, 0.2);
+            border: 2px dashed #e94560;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .upload-card:hover {
+            background: rgba(233, 69, 96, 0.3);
+            border-color: #ffd700;
+        }
+
+        .upload-icon {
+            font-size: 32px;
+        }
+
+        .upload-text {
+            font-size: 11px;
+            color: #e94560;
+            text-align: center;
+        }
+
+        #idleFileInput, #walkingFileInput {
+            display: none;
+        }
+
+        .preview-box {
+            width: 480px;
+            height: 741px;
+            background: rgba(15, 52, 96, 0.3);
+            border: 4px solid #0f3460;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            padding: 40px;
+        }
+
+        .large-preview {
+            width: 400px;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            position: relative;
+        }
+
+        .large-preview canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .preview-placeholder {
+            color: #666;
+            font-size: 18px;
+            text-align: center;
+            position: absolute;
+            width: 100%;
+        }
+
+        .character-name {
+            font-size: 28px;
+            color: #ffd700;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .character-name.visible {
+            display: block;
+        }
+
+        .confirm-btn {
+            background: #e94560;
+            color: #fff;
+            border: 3px solid #fff;
+            padding: 20px 60px;
+            border-radius: 8px;
+            font-size: 24px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            display: none;
+        }
+
+        .confirm-btn.visible {
+            display: block;
+        }
+
+        .confirm-btn:hover {
+            background: #d63447;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.8);
+        }
+
+        .back-btn {
+            background: #0f3460;
+            color: #fff;
+            border: 2px solid #e94560;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: center;
+        }
+
+        .back-btn:hover {
+            background: #e94560;
+            transform: scale(1.05);
+        }
+
+        #uploadOptionsModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #uploadOptionsModal .modal-content {
+            background: #1a1a2e;
+            border: 2px solid #e94560;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            position: relative;
+        }
+
+        #uploadOptionsModal h2 {
+            color: #e94560;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        #uploadOptionsModal button {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #uploadExistingBtn {
+            background: #0f3460;
+            color: white;
+            border: 2px solid #e94560;
+        }
+
+        #uploadExistingBtn:hover {
+            background: #e94560;
+            transform: scale(1.02);
+        }
+
+        #createNewBtn {
+            background: #16213e;
+            color: #ffd700;
+            border: 2px solid #ffd700;
+        }
+
+        #createNewBtn:hover {
+            background: #ffd700;
+            color: #1a1a2e;
+            transform: scale(1.02);
+        }
+
+        #cancelUploadBtn {
+            background: #333;
+            color: #aaa;
+            border: none;
+        }
+
+        #cancelUploadBtn:hover {
+            background: #444;
+            color: #fff;
+        }
+
+        #nameSpriteModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #nameSpriteModal .modal-content {
+            background: #1a1a2e;
+            border: 2px solid #e94560;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        #nameSpriteModal input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 16px;
+            background: #222;
+            color: white;
+            border: 1px solid #e94560;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        #nameSpriteModal button {
+            padding: 12px 24px;
+            margin: 8px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #confirmNameBtn {
+            background: #e94560;
+            color: white;
+            border: 2px solid white;
+        }
+
+        #confirmNameBtn:hover {
+            background: #d63447;
+            transform: scale(1.05);
+        }
+
+        #cancelNameBtn {
+            background: #333;
+            color: #aaa;
+            border: none;
+        }
+
+        #cancelNameBtn:hover {
+            background: #444;
+            color: #fff;
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            font-size: 24px;
+            color: #e94560;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+        }
+
+        .close-modal-btn:hover {
+            color: #ffd700;
+            transform: scale(1.2);
+        }
+
+        .upload-status {
+            margin-top: 10px;
+            color: #ffd700;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .preview-box {
+                width: 100%;
+                height: auto;
+                min-height: 400px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            .characters-grid {
+                max-height: 400px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .characters-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="shareSpriteBtn">📤 Share Your Sprite!</button>
+
+    <div class="container">
+        <h1>CHARACTER SELECT</h1>
+        
+        <div class="main-content">
+            <div class="characters-grid">
+                <div class="character-card upload-card" id="uploadCard">
+                    <div class="upload-icon">+</div>
+                    <div class="upload-text">CREATE<br>SPRITE</div>
+                    <input type="file" id="idleFileInput" accept="image/*">
+                    <input type="file" id="walkingFileInput" accept="image/*">
+                </div>
+
+                <div class="character-card" data-character="herosheet" data-name="The Adventurer">
+                    <canvas class="character-preview" width="80" height="80"></canvas>
+                    <h3>Adventurer</h3>
+                </div>
+                
+                <div class="character-card" data-character="femalesheet" data-name="The Gunner">
+                    <canvas class="character-preview" width="80" height="80"></canvas>
+                    <h3>Gunner</h3>
+                </div>
+                
+                <div class="character-card" data-character="orksheet" data-name="The Ork">
+                    <canvas class="character-preview" width="80" height="80"></canvas>
+                    <h3>Ork</h3>
+                </div>
+                
+                <div class="character-card" data-character="ninjasheet" data-name="The Ninja">
+                    <canvas class="character-preview" width="80" height="80"></canvas>
+                    <h3>Ninja</h3>
+                </div>
+            </div>
+
+            <div class="preview-box">
+                <div class="large-preview">
+                    <canvas id="largePreview" width="320" height="320"></canvas>
+                    <div class="preview-placeholder">Select a character</div>
+                </div>
+                <div class="character-name" id="characterName"></div>
+                <button id="confirmBtn" class="confirm-btn">CONFIRM</button>
+            </div>
+        </div>
+        
+        <button id="backBtn" class="back-btn">← Back</button>
+        <button id="galleryBtn" class="back-btn" style="margin-top: 10px;">🎨 View Gallery</button>
+    </div>
+
+    <div id="uploadOptionsModal">
+        <div class="modal-content">
+            <h2>How would you like to add your sprite?</h2>
+            <div class="close-modal-btn" id="closeUploadModal">✖</div>
+            <button id="uploadExistingBtn">Upload Existing Spritesheets (Idle + Walking)</button>
+            <button id="createNewBtn">Create Your Own Sprite</button>
+            <button id="cancelUploadBtn">Cancel</button>
+            <div class="upload-status" id="uploadStatus"></div>
+        </div>
+    </div>
+
+    <div id="nameSpriteModal">
+        <div class="modal-content">
+            <h2>Name Your Sprite</h2>
+            <p>Give your sprite a cool name:</p>
+            <input type="text" id="spriteNameInput" placeholder="e.g., 'Cyber Samurai'" maxlength="30">
+            <div>
+                <button id="confirmNameBtn">Confirm & Use</button>
+                <button id="cancelNameBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAozzInC73HdInHcSGbZE4Wf5y_MtSQfR4",
+            authDomain: "spritegallery-22c27.firebaseapp.com",
+            databaseURL: "https://spritegallery-22c27-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "spritegallery-22c27",
+            storageBucket: "spritegallery-22c27.firebasestorage.app",
+            messagingSenderId: "556215864746",
+            appId: "1:556215864746:web:bcd7ed0a4b19c4c6782fd3"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const characters = [
+            { id: 'herosheet', name: 'The Adventurer', spriteSheet: './assets/sprites/herosheet.png' },
+            { id: 'femalesheet', name: 'The Gunner', spriteSheet: './assets/sprites/femalesheet.png' },
+            { id: 'orksheet', name: 'The Ork', spriteSheet: './assets/sprites/orksheet.png' },
+            { id: 'ninjasheet', name: 'The Ninja', spriteSheet: './assets/sprites/ninjasheet.png' }
+        ];
+
+        let selectedCharacter = null;
+        let selectedCharacterName = null;
+        let loadedSprites = {};
+        let largePreviewInterval = null;
+        let customSpriteData = null;
+        let customSpriteName = '';
+        let idleSpriteUploaded = null;
+        let walkingSpriteUploaded = null;
+
+        const largePreviewCanvas = document.getElementById('largePreview');
+        const largePreviewCtx = largePreviewCanvas.getContext('2d');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const placeholder = document.querySelector('.preview-placeholder');
+        const characterNameEl = document.getElementById('characterName');
+        const idleFileInput = document.getElementById('idleFileInput');
+        const walkingFileInput = document.getElementById('walkingFileInput');
+        const uploadCard = document.getElementById('uploadCard');
+        const shareSpriteBtn = document.getElementById('shareSpriteBtn');
+        const uploadOptionsModal = document.getElementById('uploadOptionsModal');
+        const uploadExistingBtn = document.getElementById('uploadExistingBtn');
+        const createNewBtn = document.getElementById('createNewBtn');
+        const cancelUploadBtn = document.getElementById('cancelUploadBtn');
+        const nameSpriteModal = document.getElementById('nameSpriteModal');
+        const spriteNameInput = document.getElementById('spriteNameInput');
+        const confirmNameBtn = document.getElementById('confirmNameBtn');
+        const cancelNameBtn = document.getElementById('cancelNameBtn');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        function showShareButton() { shareSpriteBtn.style.display = 'block'; }
+        function hideShareButton() { shareSpriteBtn.style.display = 'none'; }
+
+        uploadCard.addEventListener('click', () => {
+            uploadStatus.textContent = '';
+            uploadOptionsModal.style.display = 'flex';
+        });
+
+        uploadExistingBtn.addEventListener('click', () => {
+            uploadOptionsModal.style.display = 'none';
+            uploadStatus.textContent = 'Step 1/2: Upload IDLE animation...';
+            uploadOptionsModal.style.display = 'flex';
+            idleFileInput.click();
+        });
+
+        createNewBtn.addEventListener('click', () => {
+            uploadOptionsModal.style.display = 'none';
+            window.location.href = 'createsprite.html';
+        });
+
+        cancelUploadBtn.addEventListener('click', () => {
+            uploadOptionsModal.style.display = 'none';
+            idleSpriteUploaded = null;
+            walkingSpriteUploaded = null;
+            uploadStatus.textContent = '';
+        });
+
+        document.getElementById('closeUploadModal').addEventListener('click', () => {
+            uploadOptionsModal.style.display = 'none';
+            idleSpriteUploaded = null;
+            walkingSpriteUploaded = null;
+            uploadStatus.textContent = '';
+        });
+
+        idleFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        idleSpriteUploaded = img;
+                        uploadStatus.textContent = '✅ Idle uploaded! Step 2/2: Upload WALKING animation...';
+                        uploadOptionsModal.style.display = 'flex';
+                        setTimeout(() => walkingFileInput.click(), 500);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        walkingFileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const img = new Image();
+                    img.onload = async () => {
+                        walkingSpriteUploaded = img;
+
+                        if (!idleSpriteUploaded) {
+                            alert('Please upload IDLE animation first!');
+                            return;
+                        }
+
+                        uploadStatus.textContent = '✅ Both animations uploaded! Combining...';
+
+                        // Combine both sprite sheets
+                        const combinedCanvas = document.createElement('canvas');
+                        combinedCanvas.width = 32 * 18;
+                        combinedCanvas.height = 32;
+                        const combinedCtx = combinedCanvas.getContext('2d');
+
+                        combinedCtx.drawImage(idleSpriteUploaded, 0, 0);
+                        combinedCtx.drawImage(walkingSpriteUploaded, 32 * 8, 0);
+
+                        // Convert to image
+                        const finalImg = new Image();
+                        finalImg.src = combinedCanvas.toDataURL('image/png');
+                        await new Promise(resolve => finalImg.onload = resolve);
+
+                        customSpriteData = finalImg;
+                        loadedSprites['custom'] = finalImg;
+
+                        uploadOptionsModal.style.display = 'none';
+                        uploadStatus.textContent = '';
+                        spriteNameInput.value = '';
+                        nameSpriteModal.style.display = 'flex';
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        confirmNameBtn.addEventListener('click', () => {
+            const name = spriteNameInput.value.trim();
+            if (!name) {
+                alert('Please enter a name!');
+                return;
+            }
+
+            customSpriteName = name;
+            selectedCharacter = 'custom';
+            selectedCharacterName = name;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = customSpriteData.width;
+            canvas.height = customSpriteData.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(customSpriteData, 0, 0);
+            localStorage.setItem('customSpriteData', JSON.stringify({
+                name: customSpriteName,
+                image: canvas.toDataURL('image/png')
+            }));
+
+            document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+            uploadCard.classList.add('selected');
+            placeholder.style.display = 'none';
+            largePreviewCanvas.style.display = 'block';
+            characterNameEl.textContent = name;
+            characterNameEl.classList.add('visible');
+            animateLargePreview('custom');
+            confirmBtn.classList.add('visible');
+            showShareButton();
+
+            nameSpriteModal.style.display = 'none';
+            idleSpriteUploaded = null;
+            walkingSpriteUploaded = null;
+        });
+
+        cancelNameBtn.addEventListener('click', () => {
+            nameSpriteModal.style.display = 'none';
+            customSpriteData = null;
+            customSpriteName = '';
+            selectedCharacter = null;
+            selectedCharacterName = null;
+            idleSpriteUploaded = null;
+            walkingSpriteUploaded = null;
+        });
+
+        shareSpriteBtn.addEventListener('click', async () => {
+            if (!customSpriteData || !customSpriteName) {
+                alert('No custom sprite ready to share.');
+                return;
+            }
+
+            const author = prompt('Enter your name/alias for sharing:', 'Anonymous')?.trim();
+            if (!author) {
+                alert('Sharing canceled.');
+                return;
+            }
+
+            try {
+                shareSpriteBtn.disabled = true;
+                shareSpriteBtn.textContent = '📤 Saving...';
+
+                // Extract idle frames only for gallery
+                const idleCanvas = document.createElement('canvas');
+                idleCanvas.width = 32 * 8;
+                idleCanvas.height = 32;
+                const idleCtx = idleCanvas.getContext('2d');
+                idleCtx.drawImage(customSpriteData, 0, 0, 32 * 8, 32, 0, 0, 32 * 8, 32);
+                const idleImageData = idleCanvas.toDataURL('image/png');
+
+                const newSpriteRef = db.ref('sprites').push();
+                await newSpriteRef.set({
+                    id: newSpriteRef.key,
+                    name: customSpriteName,
+                    author: author,
+                    image: idleImageData,
+                    date: firebase.database.ServerValue.TIMESTAMP
+                });
+
+                alert(`✅ "${customSpriteName}" shared with the gallery!`);
+                shareSpriteBtn.textContent = '📤 Share Your Sprite!';
+                shareSpriteBtn.disabled = false;
+            } catch (error) {
+                console.error('Share failed:', error);
+                alert('Failed to share. Try again.');
+                shareSpriteBtn.textContent = '📤 Share Your Sprite!';
+                shareSpriteBtn.disabled = false;
+            }
+        });
+
+        function loadCharacterSprites() {
+            characters.forEach(char => {
+                const img = new Image();
+                img.onerror = () => console.warn(`Failed to load: ${char.spriteSheet}`);
+                img.onload = () => {
+                    loadedSprites[char.id] = img;
+                    animateCharacter(char.id);
+                };
+                img.src = char.spriteSheet;
+            });
+        }
+
+        function animateCharacter(characterId) {
+            const card = document.querySelector(`[data-character="${characterId}"]`);
+            if (!card) return;
+            const canvas = card.querySelector('.character-preview');
+            const ctx = canvas.getContext('2d');
+            let frame = 0;
+            const idleFrames = [0, 1, 2, 3];
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const sprite = loadedSprites[characterId];
+                if (sprite) {
+                    const currentFrame = idleFrames[frame];
+                    const sx = currentFrame * 32;
+                    const sy = 0;
+                    const scale = 2;
+                    const dx = (canvas.width - 32 * scale) / 2;
+                    const dy = (canvas.height - 32 * scale) / 2;
+                    ctx.drawImage(sprite, sx, sy, 32, 32, dx, dy, 32 * scale, 32 * scale);
+                }
+                frame = (frame + 1) % idleFrames.length;
+            }
+            setInterval(animate, 125);
+        }
+
+        function animateLargePreview(characterId) {
+            if (largePreviewInterval) clearInterval(largePreviewInterval);
+            let frame = 0;
+            const idleFrames = [0, 1, 2, 3, 4, 5, 6, 7];
+            function animate() {
+                largePreviewCtx.clearRect(0, 0, largePreviewCanvas.width, largePreviewCanvas.height);
+                if (characterId === 'custom' && customSpriteData) {
+                    const currentFrame = idleFrames[frame];
+                    const sx = currentFrame * 32;
+                    const sy = 0;
+                    const scale = 8;
+                    const dx = (largePreviewCanvas.width - 32 * scale) / 2;
+                    const dy = (largePreviewCanvas.height - 32 * scale) / 2;
+                    largePreviewCtx.drawImage(customSpriteData, sx, sy, 32, 32, dx, dy, 32 * scale, 32 * scale);
+                } else if (loadedSprites[characterId]) {
+                    const sprite = loadedSprites[characterId];
+                    const currentFrame = frame % 4;
+                    const sx = currentFrame * 32;
+                    const sy = 0;
+                    const scale = 8;
+                    const dx = (largePreviewCanvas.width - 32 * scale) / 2;
+                    const dy = (largePreviewCanvas.height - 32 * scale) / 2;
+                    largePreviewCtx.drawImage(sprite, sx, sy, 32, 32, dx, dy, 32 * scale, 32 * scale);
+                }
+                frame = (frame + 1) % idleFrames.length;
+            }
+            largePreviewInterval = setInterval(animate, 125);
+        }
+
+        function loadAndInjectCustomSprite() {
+            const saved = localStorage.getItem('customSpriteData');
+            if (!saved) return;
+
+            try {
+                const { name, image } = JSON.parse(saved);
+                const existingCustomCard = document.querySelector('.character-card[data-character="custom"]');
+                if (existingCustomCard) return;
+
+                const img = new Image();
+                img.src = image;
+                img.onload = () => {
+                    loadedSprites['custom'] = img;
+
+                    const customCard = document.createElement('div');
+                    customCard.className = 'character-card';
+                    customCard.setAttribute('data-character', 'custom');
+                    customCard.setAttribute('data-name', name);
+
+                    customCard.innerHTML = `
+                        <canvas class="character-preview" width="80" height="80"></canvas>
+                        <h3>${escapeHtml(name)}</h3>
+                    `;
+
+                    uploadCard.parentNode.insertBefore(customCard, uploadCard);
+
+                    const canvas = customCard.querySelector('.character-preview');
+                    const ctx = canvas.getContext('2d');
+                    let frame = 0;
+                    const idleFrames = [0, 1, 2, 3, 4, 5, 6, 7];
+                    setInterval(() => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        const currentFrame = idleFrames[frame];
+                        const sx = currentFrame * 32;
+                        const sy = 0;
+                        const scale = 2;
+                        const dx = (canvas.width - 32 * scale) / 2;
+                        const dy = (canvas.height - 32 * scale) / 2;
+                        ctx.drawImage(img, sx, sy, 32, 32, dx, dy, 32 * scale, 32 * scale);
+                        frame = (frame + 1) % idleFrames.length;
+                    }, 125);
+
+                    customCard.addEventListener('click', () => {
+                        document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+                        customCard.classList.add('selected');
+                        selectedCharacter = 'custom';
+                        selectedCharacterName = name;
+                        customSpriteData = img;
+                        customSpriteName = name;
+                        placeholder.style.display = 'none';
+                        largePreviewCanvas.style.display = 'block';
+                        characterNameEl.textContent = name;
+                        characterNameEl.classList.add('visible');
+                        animateLargePreview('custom');
+                        confirmBtn.classList.add('visible');
+                        showShareButton();
+                    });
+
+                    if (localStorage.getItem('selectedCharacter') === 'custom') {
+                        setTimeout(() => customCard.click(), 300);
+                    }
+                };
+            } catch (e) {
+                console.warn('Failed to inject custom sprite', e);
+                localStorage.removeItem('customSpriteData');
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.querySelectorAll('.character-card:not(.upload-card)').forEach(card => {
+            if (card.getAttribute('data-character') === 'custom') return;
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedCharacter = card.getAttribute('data-character');
+                selectedCharacterName = card.getAttribute('data-name');
+                placeholder.style.display = 'none';
+                largePreviewCanvas.style.display = 'block';
+                characterNameEl.textContent = selectedCharacterName;
+                characterNameEl.classList.add('visible');
+                animateLargePreview(selectedCharacter);
+                confirmBtn.classList.add('visible');
+                if (selectedCharacter !== 'custom') hideShareButton();
+            });
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            if (!selectedCharacter) return;
+            if (selectedCharacter === 'custom' && !customSpriteName) {
+                alert('Please name your sprite first!');
+                return;
+            }
+            localStorage.setItem('selectedCharacter', selectedCharacter);
+            if (selectedCharacter === 'custom') {
+                const canvas = document.createElement('canvas');
+                canvas.width = customSpriteData.width;
+                canvas.height = customSpriteData.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(customSpriteData, 0, 0);
+                localStorage.setItem('customSprite', canvas.toDataURL('image/png'));
+            }
+            window.location.href = 'startscreen.html';
+        });
+
+        document.getElementById('galleryBtn').addEventListener('click', () => window.location.href = 'gallery.html');
+        document.getElementById('backBtn').addEventListener('click', () => window.location.href = 'index.html');
+
+        window.addEventListener('load', () => {
+            loadCharacterSprites();
+            loadAndInjectCustomSprite();
+        });
+    </script>
+</body>
+</html>

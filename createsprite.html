@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Gallery</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 48px;
+            color: #e94560;
+            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #aaa;
+            font-size: 16px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .search-box, .sort-select {
+            padding: 10px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            background: rgba(15, 52, 96, 0.3);
+            border: 2px solid #e94560;
+            border-radius: 6px;
+            color: white;
+            width: 250px;
+        }
+
+        .search-box::placeholder {
+            color: #666;
+        }
+
+        .sort-select {
+            width: 180px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 10px;
+        }
+
+        .sprite-card {
+            background: rgba(15, 52, 96, 0.3);
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sprite-card:hover {
+            transform: translateY(-5px);
+            border-color: #e94560;
+            box-shadow: 0 10px 20px rgba(233, 69, 96, 0.3);
+        }
+
+        .sprite-preview {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            border-bottom: 2px solid #0f3460;
+        }
+
+        .sprite-preview canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .sprite-info {
+            padding: 15px;
+            text-align: center;
+        }
+
+        .sprite-name {
+            font-size: 18px;
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        .sprite-author {
+            font-size: 14px;
+            color: #e94560;
+            margin-bottom: 5px;
+        }
+
+        .sprite-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            grid-column: 1 / -1;
+        }
+
+        .empty-state h2 {
+            font-size: 28px;
+            color: #e94560;
+            margin-bottom: 15px;
+        }
+
+        .empty-state p {
+            color: #aaa;
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+
+        .back-btn {
+            background: #0f3460;
+            color: #fff;
+            border: 2px solid #e94560;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 0 auto 20px;
+            width: fit-content;
+        }
+
+        .back-btn:hover {
+            background: #e94560;
+            transform: scale(1.05);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .search-box, .sort-select {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 SPRITE GALLERY</h1>
+            <div class="subtitle">Community-created pixel art sprites</div>
+        </header>
+
+        <div class="controls">
+            <input type="text" id="searchInput" class="search-box" placeholder="Search by name or author...">
+            <select id="sortSelect" class="sort-select">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">Name (A-Z)</option>
+            </select>
+        </div>
+
+        <div class="gallery-grid" id="galleryGrid">
+            <div class="empty-state">
+                <h2>⏳ Loading gallery...</h2>
+                <p>Fetching shared sprites from the community.</p>
+            </div>
+        </div>
+
+        <button id="backBtn" class="back-btn">← Back to Character Select</button>
+
+        <div class="footer">
+            Share your own sprite in the character select screen!
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAozzInC73HdInHcSGbZE4Wf5y_MtSQfR4",
+            authDomain: "spritegallery-22c27.firebaseapp.com",
+            databaseURL: "https://spritegallery-22c27-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "spritegallery-22c27",
+            storageBucket: "spritegallery-22c27.firebasestorage.app",
+            messagingSenderId: "556215864746",
+            appId: "1:556215864746:web:bcd7ed0a4b19c4c6782fd3"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const galleryGrid = document.getElementById('galleryGrid');
+        const searchInput = document.getElementById('searchInput');
+        const sortSelect = document.getElementById('sortSelect');
+        const backBtn = document.getElementById('backBtn');
+
+        const animationIntervals = [];
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(timestamp) {
+            if (typeof timestamp !== 'number') return 'Unknown';
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Animate only idle frames (0-7) from the sprite sheet
+        function animateSpritePreview(canvas, spriteImage) {
+            const ctx = canvas.getContext('2d');
+            const frameWidth = 32;
+            const frameHeight = 32;
+            const scale = 3;
+            let frame = 0;
+            const idleFrames = [0, 1, 2, 3, 4, 5, 6, 7]; // Only first 8 frames
+
+            const existingInterval = canvas.__interval;
+            if (existingInterval) clearInterval(existingInterval);
+
+            const interval = setInterval(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const currentFrame = idleFrames[frame];
+                const sx = currentFrame * frameWidth;
+                const sy = 0;
+
+                const dx = (canvas.width - frameWidth * scale) / 2;
+                const dy = (canvas.height - frameHeight * scale) / 2;
+
+                ctx.drawImage(
+                    spriteImage,
+                    sx, sy, frameWidth, frameHeight,
+                    dx, dy, frameWidth * scale, frameHeight * scale
+                );
+
+                frame = (frame + 1) % idleFrames.length;
+            }, 150);
+
+            canvas.__interval = interval;
+            animationIntervals.push(interval);
+        }
+
+        function renderSprites(sprites) {
+            animationIntervals.forEach(id => clearInterval(id));
+            animationIntervals.length = 0;
+
+            if (sprites.length === 0) {
+                galleryGrid.innerHTML = `
+                    <div class="empty-state">
+                        <h2>🎨 No Sprites Yet</h2>
+                        <p>Be the first to share! Go to the character select screen, create or upload a sprite, and click "Share Your Sprite!"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            galleryGrid.innerHTML = '';
+            sprites.forEach(sprite => {
+                const card = document.createElement('div');
+                card.className = 'sprite-card';
+
+                const preview = document.createElement('div');
+                preview.className = 'sprite-preview';
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 160;
+                canvas.height = 160;
+                preview.appendChild(canvas);
+
+                const info = document.createElement('div');
+                info.className = 'sprite-info';
+                info.innerHTML = `
+                    <div class="sprite-name">${escapeHtml(sprite.name)}</div>
+                    <div class="sprite-author">by ${escapeHtml(sprite.author)}</div>
+                    <div class="sprite-date">${formatDate(sprite.date)}</div>
+                `;
+
+                card.appendChild(preview);
+                card.appendChild(info);
+                galleryGrid.appendChild(card);
+
+                const img = new Image();
+                img.onload = () => {
+                    animateSpritePreview(canvas, img);
+                };
+                img.onerror = () => {
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#666';
+                    ctx.font = '14px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Failed to load', canvas.width / 2, canvas.height / 2);
+                };
+                img.src = sprite.image;
+            });
+        }
+
+        async function loadAndRender() {
+            try {
+                const snapshot = await db.ref('sprites').once('value');
+                let sprites = [];
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    if (data && data.name && data.author && data.image) {
+                        sprites.push(data);
+                    }
+                });
+
+                const searchTerm = searchInput.value.toLowerCase();
+                const sortBy = sortSelect.value;
+
+                if (searchTerm) {
+                    sprites = sprites.filter(s => 
+                        s.name.toLowerCase().includes(searchTerm) ||
+                        s.author.toLowerCase().includes(searchTerm)
+                    );
+                }
+
+                if (sortBy === 'newest') {
+                    sprites.sort((a, b) => b.date - a.date);
+                } else if (sortBy === 'oldest') {
+                    sprites.sort((a, b) => a.date - b.date);
+                } else if (sortBy === 'name') {
+                    sprites.sort((a, b) => a.name.localeCompare(b.name));
+                }
+
+                renderSprites(sprites);
+            } catch (error) {
+                console.error('Failed to load gallery:', error);
+                galleryGrid.innerHTML = `<div class="empty-state"><h2>❌ Failed to load</h2><p>Try refreshing the page.</p></div>`;
+            }
+        }
+
+        searchInput.addEventListener('input', loadAndRender);
+        sortSelect.addEventListener('change', loadAndRender);
+        backBtn.addEventListener('click', () => window.location.href = 'character-select.html');
+
+        window.addEventListener('beforeunload', () => {
+            animationIntervals.forEach(id => clearInterval(id));
+        });
+
+        window.addEventListener('load', loadAndRender);
+    </script>
+</body>
+</html>

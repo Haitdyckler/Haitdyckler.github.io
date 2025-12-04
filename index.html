@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardy Amuntai Portfolio</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="desktop">
+        <!-- Desktop Icons (Top Left) -->
+        <div class="desktop-icons">
+            <div class="desktop-icon" data-href="projects.html">
+                <img src="assets/projects_icon.png" alt="Projects" class="icon-image">
+                <span class="icon-label">Projects</span>
+            </div>
+            <div class="desktop-icon" data-href="about.html">
+                <img src="assets/about_icon.png" alt="About Me" class="icon-image">
+                <span class="icon-label">About Me</span>
+            </div>
+            <div class="desktop-icon" data-href="contact.html">
+                <img src="assets/contacts_icon.png" alt="Contact" class="icon-image">
+                <span class="icon-label">Contact</span>
+            </div>
+            <div class="desktop-icon" data-href="resume.html">
+                <img src="assets/resume_icon.png" alt="Resume" class="icon-image">
+                <span class="icon-label">Resume</span>
+            </div>
+        </div>
+
+        <!-- Window -->
+        <div class="window active" id="introWindow">
+            <div class="title-bar" id="titleBar">
+                <div class="title-bar-text">
+                    <span class="title-bar-icon"></span>
+                    Introduction
+                </div>
+                <div class="title-bar-controls">
+                    <button class="title-bar-btn" id="minimizeBtn">_</button>
+                    <button class="title-bar-btn" id="closeBtn">×</button>
+                </div>
+            </div>
+            <div class="window-body">
+                <span class="typing-text" id="typingText"></span>
+            </div>
+        </div>
+
+        <!-- Arcade Machine Start Button (Single PNG + Glow) -->
+        <div class="arcade-start-button" id="startButton">
+            <img src="assets/start.png" alt="Start Game" class="start-button-image">
+        </div>
+
+        <!-- Taskbar -->
+        <div class="taskbar">
+            <button class="start-button">
+                <span class="start-icon">🪟</span>
+                Start
+            </button>
+            <div class="taskbar-window" id="taskbarWindow">
+                <span class="title-bar-icon"></span>
+                Introduction
+            </div>
+            <div class="taskbar-clock" id="clock">12:00 PM</div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,250 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'MS Sans Serif', Arial, sans-serif;
+    background: linear-gradient(135deg, #008080 0%, #004d4d 100%);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.window {
+    width: 90%;
+    max-width: 900px;
+    height: 85vh;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.title-bar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    padding: 3px 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #000000;
+}
+
+.title-text {
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.title-icon {
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 1px solid #000;
+}
+
+.title-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.title-button {
+    width: 16px;
+    height: 14px;
+    background: #c0c0c0;
+    border: 1px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.title-button:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+.menu-bar {
+    background: #c0c0c0;
+    padding: 3px;
+    border-bottom: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+}
+
+.menu-item {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.menu-item:hover {
+    background: #000080;
+    color: white;
+}
+
+.content {
+    flex: 1;
+    background: #ffffff;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.header-section {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header-section h1 {
+    font-size: 32px;
+    color: #000080;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 14px;
+}
+
+.contact-box {
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    margin-bottom: 20px;
+}
+
+.box-header {
+    background: linear-gradient(to right, #000080, #1084d0);
+    color: white;
+    padding: 5px 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.folder-icon {
+    font-size: 16px;
+}
+
+.contact-grid {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.contact-section {
+    background: white;
+    padding: 15px;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.section-title {
+    color: #000080;
+    font-weight: bold;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+}
+
+.globe-icon {
+    font-size: 18px;
+}
+
+.contact-list {
+    list-style: none;
+}
+
+.contact-list li {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.link-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.contact-list a {
+    color: #0000ff;
+    text-decoration: underline;
+    font-size: 14px;
+}
+
+.contact-list a:hover {
+    color: #ff0000;
+}
+
+.contact-list a:visited {
+    color: #800080;
+}
+
+.info-box {
+    background: #ffffe1;
+    border: 2px solid;
+    border-color: #000000 #ffffff #ffffff #000000;
+    padding: 15px;
+    font-size: 13px;
+}
+
+.info-box strong {
+    color: #000080;
+}
+
+.status-bar {
+    background: #c0c0c0;
+    padding: 3px 5px;
+    border-top: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    font-size: 12px;
+    display: flex;
+    gap: 20px;
+}
+
+.status-item {
+    padding: 2px 8px;
+    border: 1px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+::-webkit-scrollbar {
+    width: 16px;
+}
+
+::-webkit-scrollbar-track {
+    background: #c0c0c0;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #808080;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+}
+
+@media (max-width: 768px) {
+    .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .header-section h1 {
+        font-size: 24px;
+    }
+}
