@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sprite Gallery</title>
+    <title>Create Your Sprite</title>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -20,208 +20,310 @@
             color: #fff;
             min-height: 100vh;
             padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
+            max-width: 800px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
         }
 
         h1 {
-            font-size: 48px;
+            font-size: 36px;
             color: #e94560;
-            text-shadow: 0 0 20px rgba(233, 69, 96, 0.5);
-            letter-spacing: 4px;
+            text-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
             margin-bottom: 10px;
+            text-align: center;
         }
 
         .subtitle {
             color: #aaa;
-            font-size: 16px;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
-        .controls {
+        .animation-type {
+            font-size: 24px;
+            color: #ffd700;
+            background: rgba(15, 52, 96, 0.5);
+            padding: 15px 30px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 2px solid #ffd700;
+        }
+
+        .frame-info {
+            font-size: 20px;
+            color: #ffd700;
+            background: rgba(15, 52, 96, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            background: #0f3460;
+            border: 3px solid #e94560;
+            border-radius: 8px;
+            padding: 16px;
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
         }
 
-        .search-box, .sort-select {
-            padding: 10px 15px;
+        #drawCanvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            cursor: crosshair;
+            background: #000;
+        }
+
+        .grid {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            pointer-events: none;
+        }
+
+        .tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        .btn {
+            background: #0f3460;
+            color: white;
+            border: 2px solid #e94560;
+            padding: 10px 20px;
+            border-radius: 6px;
             font-family: 'Courier New', monospace;
             font-size: 16px;
-            background: rgba(15, 52, 96, 0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #e94560;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .nav-btns {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .color-picker {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(15, 52, 96, 0.4);
+            padding: 15px;
+            border-radius: 10px;
             border: 2px solid #e94560;
-            border-radius: 6px;
-            color: white;
             width: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 100;
         }
 
-        .search-box::placeholder {
-            color: #666;
+        .picker-canvas {
+            cursor: crosshair;
+            border: 1px solid #666;
         }
 
-        .sort-select {
-            width: 180px;
+        .hue-slider {
+            width: 200px;
+            height: 20px;
+            cursor: pointer;
         }
 
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-            padding: 10px;
+        .current-color {
+            width: 40px;
+            height: 40px;
+            border: 2px solid white;
+            border-radius: 4px;
         }
 
-        .sprite-card {
-            background: rgba(15, 52, 96, 0.3);
-            border: 2px solid #0f3460;
-            border-radius: 8px;
-            overflow: hidden;
-            transition: all 0.3s ease;
+        #nameModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
         }
 
-        .sprite-card:hover {
-            transform: translateY(-5px);
-            border-color: #e94560;
-            box-shadow: 0 10px 20px rgba(233, 69, 96, 0.3);
+        #nameModal .modal-content {
+            background: #1a1a2e;
+            border: 2px solid #e94560;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            max-width: 450px;
+            width: 90%;
         }
 
-        .sprite-preview {
+        #nameModal input {
             width: 100%;
-            height: 200px;
-            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 16px;
+            background: #222;
+            color: white;
+            border: 1px solid #e94560;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        #nameModal .checkbox {
+            margin: 15px 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            border-bottom: 2px solid #0f3460;
-        }
-
-        .sprite-preview canvas {
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
-
-        .sprite-info {
-            padding: 15px;
-            text-align: center;
-        }
-
-        .sprite-name {
-            font-size: 18px;
+            gap: 8px;
             color: #ffd700;
-            margin-bottom: 5px;
         }
 
-        .sprite-author {
-            font-size: 14px;
-            color: #e94560;
-            margin-bottom: 5px;
-        }
-
-        .sprite-date {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            grid-column: 1 / -1;
-        }
-
-        .empty-state h2 {
-            font-size: 28px;
-            color: #e94560;
-            margin-bottom: 15px;
-        }
-
-        .empty-state p {
-            color: #aaa;
-            max-width: 500px;
-            margin: 0 auto 20px;
-        }
-
-        .back-btn {
-            background: #0f3460;
-            color: #fff;
-            border: 2px solid #e94560;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 18px;
+        #nameModal button {
+            padding: 12px 24px;
+            margin: 8px;
+            font-size: 16px;
             font-family: 'Courier New', monospace;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            display: block;
-            margin: 0 auto 20px;
-            width: fit-content;
         }
 
-        .back-btn:hover {
+        #confirmNameBtn {
             background: #e94560;
-            transform: scale(1.05);
+            color: white;
+            border: 2px solid white;
         }
 
-        .footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #666;
-            font-size: 14px;
+        #confirmNameBtn:hover {
+            background: #d63447;
         }
 
-        @media (max-width: 768px) {
-            .controls {
+        #cancelNameBtn {
+            background: #333;
+            color: #aaa;
+            border: none;
+        }
+
+        #cancelNameBtn:hover {
+            background: #444;
+            color: #fff;
+        }
+
+        .preview-strip {
+            display: flex;
+            gap: 2px;
+            margin: 15px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .preview-frame {
+            width: 24px;
+            height: 24px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            background: #000;
+            border: 1px solid #333;
+        }
+
+        @media (max-width: 1200px) {
+            .color-picker {
+                position: relative;
+                right: auto;
+                top: auto;
+                transform: none;
+                margin: 20px auto;
+                max-width: 300px;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .nav-btns, .tools {
                 flex-direction: column;
                 align-items: center;
             }
-
-            .search-box, .sort-select {
+            .btn {
                 width: 100%;
-                max-width: 300px;
-            }
-
-            h1 {
-                font-size: 36px;
+                max-width: 200px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🎨 SPRITE GALLERY</h1>
-            <div class="subtitle">Community-created pixel art sprites</div>
-        </header>
+        <h1>CREATE YOUR SPRITE</h1>
+        <div class="subtitle">Create both IDLE and WALKING animations!</div>
 
-        <div class="controls">
-            <input type="text" id="searchInput" class="search-box" placeholder="Search by name or author...">
-            <select id="sortSelect" class="sort-select">
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="name">Name (A-Z)</option>
-            </select>
+        <div class="animation-type" id="animationType">IDLE ANIMATION</div>
+        <div class="frame-info">Frame: <span id="frameCounter">1</span> / <span id="maxFrames">8</span></div>
+
+        <div class="canvas-wrapper">
+            <canvas id="drawCanvas" width="256" height="256"></canvas>
+            <canvas class="grid" width="256" height="256"></canvas>
         </div>
 
-        <div class="gallery-grid" id="galleryGrid">
-            <div class="empty-state">
-                <h2>⏳ Loading gallery...</h2>
-                <p>Fetching shared sprites from the community.</p>
+        <div class="tools">
+            <button id="clearBtn" class="btn">Clear Frame</button>
+        </div>
+
+        <div class="nav-btns">
+            <button id="prevBtn" class="btn" disabled>← Previous</button>
+            <button id="nextBtn" class="btn">Next →</button>
+        </div>
+
+        <button id="finishBtn" class="btn" style="display: none;">✓ Finish Animation</button>
+
+        <div class="preview-strip" id="previewStrip"></div>
+    </div>
+
+    <div class="color-picker">
+        <div>Current Color:</div>
+        <div class="current-color" id="currentColorBox"></div>
+        <!-- Changed to rectangle (200x150) instead of square -->
+        <canvas id="satValCanvas" class="picker-canvas" width="200" height="150"></canvas>
+        <canvas id="hueCanvas" class="hue-slider" width="200" height="20"></canvas>
+    </div>
+
+    <div id="nameModal">
+        <div class="modal-content">
+            <h2>Name Your Sprite</h2>
+            <p>Give your creation a cool name!</p>
+            <input type="text" id="spriteNameInput" placeholder="e.g., 'Pixel Warrior'" maxlength="30">
+            
+            <div class="checkbox">
+                <input type="checkbox" id="shareCheckbox" checked>
+                <label for="shareCheckbox">Share this sprite in the public gallery</label>
             </div>
-        </div>
 
-        <button id="backBtn" class="back-btn">← Back to Character Select</button>
-
-        <div class="footer">
-            Share your own sprite in the character select screen!
+            <button id="confirmNameBtn">Save & Continue</button>
+            <button id="cancelNameBtn">Cancel</button>
         </div>
     </div>
 
@@ -239,162 +341,417 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const galleryGrid = document.getElementById('galleryGrid');
-        const searchInput = document.getElementById('searchInput');
-        const sortSelect = document.getElementById('sortSelect');
-        const backBtn = document.getElementById('backBtn');
+        const FRAME_WIDTH = 32;
+        const FRAME_HEIGHT = 32;
+        const CANVAS_SCALE = 8;
 
-        const animationIntervals = [];
+        const drawCanvas = document.getElementById('drawCanvas');
+        const drawCtx = drawCanvas.getContext('2d', { willReadFrequently: true });
+        const gridCanvas = document.querySelector('.grid');
+        const gridCtx = gridCanvas.getContext('2d');
+        const frameCounter = document.getElementById('frameCounter');
+        const maxFramesSpan = document.getElementById('maxFrames');
+        const animationTypeEl = document.getElementById('animationType');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const finishBtn = document.getElementById('finishBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const previewStrip = document.getElementById('previewStrip');
+        const nameModal = document.getElementById('nameModal');
+        const spriteNameInput = document.getElementById('spriteNameInput');
+        const shareCheckbox = document.getElementById('shareCheckbox');
+        const confirmNameBtn = document.getElementById('confirmNameBtn');
+        const cancelNameBtn = document.getElementById('cancelNameBtn');
+        const currentColorBox = document.getElementById('currentColorBox');
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        const satValCanvas = document.getElementById('satValCanvas');
+        const satValCtx = satValCanvas.getContext('2d');
+        const hueCanvas = document.getElementById('hueCanvas');
+        const hueCtx = hueCanvas.getContext('2d');
+
+        let currentAnimationType = 'idle'; // 'idle' or 'walking'
+        let TOTAL_FRAMES = 8;
+        let currentFrame = 0;
+        let frames = Array(8).fill(null).map(() => {
+            const canvas = document.createElement('canvas');
+            canvas.width = FRAME_WIDTH;
+            canvas.height = FRAME_HEIGHT;
+            return canvas;
+        });
+        
+        let idleSpriteData = null;
+        let walkingSpriteData = null;
+        let spriteName = '';
+
+        let currentHue = 0;
+        let currentSat = 1;
+        let currentValue = 1;
+
+        function hsvToRgb(h, s, v) {
+            h = h % 360;
+            if (h < 0) h += 360;
+            s = Math.max(0, Math.min(1, s));
+            v = Math.max(0, Math.min(1, v));
+
+            const c = v * s;
+            const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            const m = v - c;
+            let r, g, b;
+
+            if (h < 60) [r, g, b] = [c, x, 0];
+            else if (h < 120) [r, g, b] = [x, c, 0];
+            else if (h < 180) [r, g, b] = [0, c, x];
+            else if (h < 240) [r, g, b] = [0, x, c];
+            else if (h < 300) [r, g, b] = [x, 0, c];
+            else [r, g, b] = [c, 0, x];
+
+            return {
+                r: Math.round((r + m) * 255),
+                g: Math.round((g + m) * 255),
+                b: Math.round((b + m) * 255)
+            };
         }
 
-        function formatDate(timestamp) {
-            if (typeof timestamp !== 'number') return 'Unknown';
-            const date = new Date(timestamp);
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
+        function updateCurrentColor() {
+            const rgb = hsvToRgb(currentHue, currentSat, currentValue);
+            const hex = `#${rgb.r.toString(16).padStart(2, '0')}${rgb.g.toString(16).padStart(2, '0')}${rgb.b.toString(16).padStart(2, '0')}`;
+            currentColorBox.style.backgroundColor = hex;
+        }
+
+        function drawSatValCanvas() {
+            const width = satValCanvas.width;
+            const height = satValCanvas.height;
+            const imageData = satValCtx.createImageData(width, height);
+
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const sat = x / (width - 1);
+                    const val = 1 - y / (height - 1);
+                    const rgb = hsvToRgb(currentHue, sat, val);
+                    const idx = (y * width + x) * 4;
+                    imageData.data[idx] = rgb.r;
+                    imageData.data[idx + 1] = rgb.g;
+                    imageData.data[idx + 2] = rgb.b;
+                    imageData.data[idx + 3] = 255;
+                }
+            }
+            satValCtx.putImageData(imageData, 0, 0);
+        }
+
+        function drawHueCanvas() {
+            const width = hueCanvas.width;
+            const height = hueCanvas.height;
+            const imageData = hueCtx.createImageData(width, height);
+
+            for (let x = 0; x < width; x++) {
+                const hue = (x / (width - 1)) * 360;
+                const rgb = hsvToRgb(hue, 1, 1);
+                for (let y = 0; y < height; y++) {
+                    const idx = (y * width + x) * 4;
+                    imageData.data[idx] = rgb.r;
+                    imageData.data[idx + 1] = rgb.g;
+                    imageData.data[idx + 2] = rgb.b;
+                    imageData.data[idx + 3] = 255;
+                }
+            }
+            hueCtx.putImageData(imageData, 0, 0);
+        }
+
+        function getSatValFromPos(x, y) {
+            const rect = satValCanvas.getBoundingClientRect();
+            const sat = Math.max(0, Math.min(1, (x - rect.left) / rect.width));
+            const val = Math.max(0, Math.min(1, 1 - (y - rect.top) / rect.height));
+            return { sat, val };
+        }
+
+        function getHueFromPos(x) {
+            const rect = hueCanvas.getBoundingClientRect();
+            return Math.max(0, Math.min(1, (x - rect.left) / rect.width)) * 360;
+        }
+
+        let isDrawing = false;
+
+        function getMousePosOnDraw(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / CANVAS_SCALE);
+            const y = Math.floor((e.clientY - rect.top) / CANVAS_SCALE);
+            return { x, y };
+        }
+
+        drawCanvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const pos = getMousePosOnDraw(e);
+            if (pos.x >= 0 && pos.x < FRAME_WIDTH && pos.y >= 0 && pos.y < FRAME_HEIGHT) {
+                const frameCtx = frames[currentFrame].getContext('2d');
+                const rgb = hsvToRgb(currentHue, currentSat, currentValue);
+                frameCtx.fillStyle = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+                frameCtx.fillRect(pos.x, pos.y, 1, 1);
+                renderFrame();
+                renderPreviewStrip();
+            }
+        });
+
+        drawCanvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const pos = getMousePosOnDraw(e);
+            if (pos.x >= 0 && pos.x < FRAME_WIDTH && pos.y >= 0 && pos.y < FRAME_HEIGHT) {
+                const frameCtx = frames[currentFrame].getContext('2d');
+                const rgb = hsvToRgb(currentHue, currentSat, currentValue);
+                frameCtx.fillStyle = `rgb(${rgb.r},${rgb.g},${rgb.b})`;
+                frameCtx.fillRect(pos.x, pos.y, 1, 1);
+                renderFrame();
+                renderPreviewStrip();
+            }
+        });
+
+        drawCanvas.addEventListener('mouseup', () => isDrawing = false);
+        drawCanvas.addEventListener('mouseout', () => isDrawing = false);
+
+        satValCanvas.addEventListener('mousedown', (e) => {
+            const { sat, val } = getSatValFromPos(e.clientX, e.clientY);
+            currentSat = sat;
+            currentValue = val;
+            updateCurrentColor();
+            drawSatValCanvas();
+        });
+
+        satValCanvas.addEventListener('mousemove', (e) => {
+            if (e.buttons !== 1) return;
+            const { sat, val } = getSatValFromPos(e.clientX, e.clientY);
+            currentSat = sat;
+            currentValue = val;
+            updateCurrentColor();
+            drawSatValCanvas();
+        });
+
+        hueCanvas.addEventListener('mousedown', (e) => {
+            currentHue = getHueFromPos(e.clientX);
+            updateCurrentColor();
+            drawSatValCanvas();
+        });
+
+        hueCanvas.addEventListener('mousemove', (e) => {
+            if (e.buttons !== 1) return;
+            currentHue = getHueFromPos(e.clientX);
+            updateCurrentColor();
+            drawSatValCanvas();
+        });
+
+        function init() {
+            drawCtx.imageSmoothingEnabled = false;
+            drawGrid();
+            drawHueCanvas();
+            drawSatValCanvas();
+            updateCurrentColor();
+            renderFrame();
+            updateUI();
+            renderPreviewStrip();
+        }
+
+        function drawGrid() {
+            gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+            gridCtx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            gridCtx.lineWidth = 1;
+            // Draw grid at actual pixel scale
+            for (let x = 0; x <= FRAME_WIDTH; x++) {
+                gridCtx.beginPath();
+                gridCtx.moveTo(x * CANVAS_SCALE, 0);
+                gridCtx.lineTo(x * CANVAS_SCALE, drawCanvas.height);
+                gridCtx.stroke();
+            }
+            for (let y = 0; y <= FRAME_HEIGHT; y++) {
+                gridCtx.beginPath();
+                gridCtx.moveTo(0, y * CANVAS_SCALE);
+                gridCtx.lineTo(drawCanvas.width, y * CANVAS_SCALE);
+                gridCtx.stroke();
+            }
+        }
+
+        function renderFrame() {
+            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            drawCtx.drawImage(frames[currentFrame], 0, 0, FRAME_WIDTH, FRAME_HEIGHT, 0, 0, drawCanvas.width, drawCanvas.height);
+        }
+
+        function updateUI() {
+            frameCounter.textContent = currentFrame + 1;
+            maxFramesSpan.textContent = TOTAL_FRAMES;
+            prevBtn.disabled = currentFrame === 0;
+            nextBtn.disabled = currentFrame === TOTAL_FRAMES - 1;
+            
+            if (currentFrame === TOTAL_FRAMES - 1) {
+                finishBtn.style.display = 'block';
+            } else {
+                finishBtn.style.display = 'none';
+            }
+        }
+
+        function renderPreviewStrip() {
+            previewStrip.innerHTML = '';
+            frames.forEach((frame, i) => {
+                const preview = document.createElement('canvas');
+                preview.className = 'preview-frame';
+                preview.width = 24;
+                preview.height = 24;
+                const ctx = preview.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(frame, 0, 0, 32, 32, 0, 0, 24, 24);
+                if (i === currentFrame) {
+                    preview.style.border = '2px solid #ffd700';
+                }
+                previewStrip.appendChild(preview);
             });
         }
 
-        // Animate only idle frames (0-7) from the sprite sheet
-        function animateSpritePreview(canvas, spriteImage) {
-            const ctx = canvas.getContext('2d');
-            const frameWidth = 32;
-            const frameHeight = 32;
-            const scale = 3;
-            let frame = 0;
-            const idleFrames = [0, 1, 2, 3, 4, 5, 6, 7]; // Only first 8 frames
+        prevBtn.addEventListener('click', () => {
+            if (currentFrame > 0) {
+                currentFrame--;
+                renderFrame();
+                updateUI();
+                renderPreviewStrip();
+            }
+        });
 
-            const existingInterval = canvas.__interval;
-            if (existingInterval) clearInterval(existingInterval);
+        nextBtn.addEventListener('click', () => {
+            if (currentFrame < TOTAL_FRAMES - 1) {
+                currentFrame++;
+                renderFrame();
+                updateUI();
+                renderPreviewStrip();
+            }
+        });
 
-            const interval = setInterval(() => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                const currentFrame = idleFrames[frame];
-                const sx = currentFrame * frameWidth;
-                const sy = 0;
+        finishBtn.addEventListener('click', () => {
+            if (currentAnimationType === 'idle') {
+                spriteNameInput.value = '';
+                nameModal.style.display = 'flex';
+            } else {
+                // Walking animation done - combine and finish
+                combineAndFinish();
+            }
+        });
 
-                const dx = (canvas.width - frameWidth * scale) / 2;
-                const dy = (canvas.height - frameHeight * scale) / 2;
+        clearBtn.addEventListener('click', () => {
+            const frameCtx = frames[currentFrame].getContext('2d');
+            frameCtx.clearRect(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+            renderFrame();
+            renderPreviewStrip();
+        });
 
-                ctx.drawImage(
-                    spriteImage,
-                    sx, sy, frameWidth, frameHeight,
-                    dx, dy, frameWidth * scale, frameHeight * scale
-                );
-
-                frame = (frame + 1) % idleFrames.length;
-            }, 150);
-
-            canvas.__interval = interval;
-            animationIntervals.push(interval);
-        }
-
-        function renderSprites(sprites) {
-            animationIntervals.forEach(id => clearInterval(id));
-            animationIntervals.length = 0;
-
-            if (sprites.length === 0) {
-                galleryGrid.innerHTML = `
-                    <div class="empty-state">
-                        <h2>🎨 No Sprites Yet</h2>
-                        <p>Be the first to share! Go to the character select screen, create or upload a sprite, and click "Share Your Sprite!"</p>
-                    </div>
-                `;
+        confirmNameBtn.addEventListener('click', async () => {
+            const name = spriteNameInput.value.trim();
+            if (!name) {
+                alert('Please enter a name!');
                 return;
             }
 
-            galleryGrid.innerHTML = '';
-            sprites.forEach(sprite => {
-                const card = document.createElement('div');
-                card.className = 'sprite-card';
+            spriteName = name;
 
-                const preview = document.createElement('div');
-                preview.className = 'sprite-preview';
-
-                const canvas = document.createElement('canvas');
-                canvas.width = 160;
-                canvas.height = 160;
-                preview.appendChild(canvas);
-
-                const info = document.createElement('div');
-                info.className = 'sprite-info';
-                info.innerHTML = `
-                    <div class="sprite-name">${escapeHtml(sprite.name)}</div>
-                    <div class="sprite-author">by ${escapeHtml(sprite.author)}</div>
-                    <div class="sprite-date">${formatDate(sprite.date)}</div>
-                `;
-
-                card.appendChild(preview);
-                card.appendChild(info);
-                galleryGrid.appendChild(card);
-
-                const img = new Image();
-                img.onload = () => {
-                    animateSpritePreview(canvas, img);
-                };
-                img.onerror = () => {
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = '#666';
-                    ctx.font = '14px monospace';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('Failed to load', canvas.width / 2, canvas.height / 2);
-                };
-                img.src = sprite.image;
+            // Save idle animation
+            const sheetCanvas = document.createElement('canvas');
+            sheetCanvas.width = FRAME_WIDTH * TOTAL_FRAMES;
+            sheetCanvas.height = FRAME_HEIGHT;
+            const sheetCtx = sheetCanvas.getContext('2d');
+            frames.forEach((frame, i) => {
+                sheetCtx.drawImage(frame, i * FRAME_WIDTH, 0);
             });
-        }
 
-        async function loadAndRender() {
-            try {
-                const snapshot = await db.ref('sprites').once('value');
-                let sprites = [];
-                snapshot.forEach(child => {
-                    const data = child.val();
-                    if (data && data.name && data.author && data.image) {
-                        sprites.push(data);
-                    }
-                });
+            idleSpriteData = sheetCanvas.toDataURL('image/png');
+            localStorage.setItem('customSpriteIdle', idleSpriteData);
 
-                const searchTerm = searchInput.value.toLowerCase();
-                const sortBy = sortSelect.value;
-
-                if (searchTerm) {
-                    sprites = sprites.filter(s => 
-                        s.name.toLowerCase().includes(searchTerm) ||
-                        s.author.toLowerCase().includes(searchTerm)
-                    );
-                }
-
-                if (sortBy === 'newest') {
-                    sprites.sort((a, b) => b.date - a.date);
-                } else if (sortBy === 'oldest') {
-                    sprites.sort((a, b) => a.date - b.date);
-                } else if (sortBy === 'name') {
-                    sprites.sort((a, b) => a.name.localeCompare(b.name));
-                }
-
-                renderSprites(sprites);
-            } catch (error) {
-                console.error('Failed to load gallery:', error);
-                galleryGrid.innerHTML = `<div class="empty-state"><h2>❌ Failed to load</h2><p>Try refreshing the page.</p></div>`;
-            }
-        }
-
-        searchInput.addEventListener('input', loadAndRender);
-        sortSelect.addEventListener('change', loadAndRender);
-        backBtn.addEventListener('click', () => window.location.href = 'character-select.html');
-
-        window.addEventListener('beforeunload', () => {
-            animationIntervals.forEach(id => clearInterval(id));
+            nameModal.style.display = 'none';
+            
+            // Switch to walking animation
+            alert('✅ Idle animation saved! Now create the WALKING animation (10 frames).');
+            currentAnimationType = 'walking';
+            TOTAL_FRAMES = 10;
+            frames = Array(10).fill(null).map(() => {
+                const canvas = document.createElement('canvas');
+                canvas.width = FRAME_WIDTH;
+                canvas.height = FRAME_HEIGHT;
+                return canvas;
+            });
+            currentFrame = 0;
+            animationTypeEl.textContent = 'WALKING ANIMATION';
+            renderFrame();
+            updateUI();
+            renderPreviewStrip();
         });
 
-        window.addEventListener('load', loadAndRender);
+        cancelNameBtn.addEventListener('click', () => {
+            nameModal.style.display = 'none';
+        });
+
+        async function combineAndFinish() {
+            if (!idleSpriteData) {
+                alert('Error: Idle animation not found!');
+                return;
+            }
+
+            // Save walking animation
+            const walkCanvas = document.createElement('canvas');
+            walkCanvas.width = FRAME_WIDTH * 10;
+            walkCanvas.height = FRAME_HEIGHT;
+            const walkCtx = walkCanvas.getContext('2d');
+            frames.forEach((frame, i) => {
+                walkCtx.drawImage(frame, i * FRAME_WIDTH, 0);
+            });
+
+            walkingSpriteData = walkCanvas.toDataURL('image/png');
+            localStorage.setItem('customSpriteWalking', walkingSpriteData);
+
+            // Combine into 18-frame sheet
+            const combinedCanvas = document.createElement('canvas');
+            combinedCanvas.width = FRAME_WIDTH * 18;
+            combinedCanvas.height = FRAME_HEIGHT;
+            const combinedCtx = combinedCanvas.getContext('2d');
+
+            const idleImg = new Image();
+            const walkImg = new Image();
+
+            idleImg.src = idleSpriteData;
+            walkImg.src = walkingSpriteData;
+
+            await new Promise(resolve => {
+                let loaded = 0;
+                idleImg.onload = () => { loaded++; if(loaded === 2) resolve(); };
+                walkImg.onload = () => { loaded++; if(loaded === 2) resolve(); };
+            });
+
+            combinedCtx.drawImage(idleImg, 0, 0);
+            combinedCtx.drawImage(walkImg, FRAME_WIDTH * 8, 0);
+
+            const finalImageData = combinedCanvas.toDataURL('image/png');
+            localStorage.setItem('customSprite', finalImageData);
+            localStorage.setItem('selectedCharacter', 'custom');
+            localStorage.setItem('customSpriteData', JSON.stringify({
+                name: spriteName,
+                image: finalImageData
+            }));
+
+            if (shareCheckbox.checked) {
+                try {
+                    const author = prompt('Your name for the gallery:', 'Anonymous')?.trim() || 'Anonymous';
+                    const newSpriteRef = db.ref('sprites').push();
+                    await newSpriteRef.set({
+                        id: newSpriteRef.key,
+                        name: spriteName,
+                        author: author,
+                        image: idleSpriteData,
+                        date: firebase.database.ServerValue.TIMESTAMP
+                    });
+                    alert(`✅ Shared "${spriteName}" to gallery!`);
+                } catch (err) {
+                    console.error(err);
+                    alert('Failed to share, but saved locally.');
+                }
+            }
+
+            alert('🎉 Sprite complete! Returning to character select...');
+            window.location.href = 'character-select.html';
+        }
+
+        // Initialize after DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
