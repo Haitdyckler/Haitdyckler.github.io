@@ -5,10 +5,13 @@
 }
 
 body {
-    font-family: 'MS Sans Serif', Arial, sans-serif;
-    background: linear-gradient(135deg, #008080 0%, #004d4d 100%);
+    font-family: 'MS Sans Serif', 'Microsoft Sans Serif', sans-serif;
+    background-image: url('../assets/background.png');
     height: 100vh;
     display: flex;
+    background-size: cover;
+    background-position: center;
+    position: relative;
     justify-content: center;
     align-items: center;
     overflow: hidden;
@@ -247,4 +250,51 @@ body {
     .header-section h1 {
         font-size: 24px;
     }
+}
+.taskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: #c0c0c0;
+    border-top: 2px solid #ffffff;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    gap: 2px;
+}
+.start-button {
+    height: 24px;
+    padding: 0 8px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    font-weight: bold;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    image-rendering: pixelated;
+    gap: 4px;
+}
+
+.start-button:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+.start-icon {
+    width: 16px;
+    height: 16px;
+    background: red;
+}
+.taskbar-clock {
+    margin-left: auto;
+    padding: 0 8px;
+    height: 22px;
+    border: 1px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    display: flex;
+    align-items: center;
+    font-size: 11px;
 }
