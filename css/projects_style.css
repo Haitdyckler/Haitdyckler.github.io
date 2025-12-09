@@ -1,0 +1,228 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'MS Sans Serif', 'Microsoft Sans Serif', sans-serif;
+    background-image: url('../assets/background.png');
+    height: 100vh;
+    display: flex;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.window {
+    width: 90%;
+    max-width: 1000px;
+    height: 85vh;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.title-bar {
+    background: linear-gradient(to right, #000080, #1084d0);
+    padding: 3px 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #000000;
+}
+
+.title-text {
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.title-icon {
+    width: 16px;
+    height: 16px;
+    background: white;
+    border: 1px solid #000;
+}
+
+.title-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.title-button {
+    width: 16px;
+    height: 14px;
+    background: #c0c0c0;
+    border: 1px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.title-button:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+.menu-bar {
+    background: #c0c0c0;
+    padding: 3px;
+    border-bottom: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+}
+
+.menu-item {
+    display: inline-block;
+    padding: 3px 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.menu-item:hover {
+    background: #000080;
+    color: white;
+}
+
+.content {
+    flex: 1;
+    background: #1a1a2e;
+    padding: 30px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.project-card {
+    background: #16213e;
+    border: 3px solid;
+    border-color: #0ea5e9 #0ea5e9 #0ea5e9 #0ea5e9;
+    padding: 25px;
+    border-radius: 0;
+}
+
+.project-title {
+    color: #ffffff;
+    font-size: 28px;
+    margin-bottom: 20px;
+    text-align: center;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.project-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    align-items: start;
+}
+
+.project-images {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.main-image,
+.character-sprites,
+.game-screenshots,
+.hardware-images {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.project-images img {
+    width: 100%;
+    height: auto;
+    border: 2px solid #c0c0c0;
+    background: #2a2a3e;
+    min-height: 150px;
+    object-fit: cover;
+}
+
+.game-screenshots {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.game-screenshots img {
+    width: 100%;
+}
+
+.hardware-images {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.hardware-images img {
+    width: 100%;
+}
+
+.project-description {
+    color: #e0e0e0;
+    line-height: 1.8;
+    font-size: 14px;
+}
+
+.project-description p {
+    margin-bottom: 15px;
+}
+
+.status-bar {
+    background: #c0c0c0;
+    padding: 3px 5px;
+    border-top: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    font-size: 12px;
+    display: flex;
+    gap: 20px;
+}
+
+.status-item {
+    padding: 2px 8px;
+    border: 1px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+::-webkit-scrollbar {
+    width: 16px;
+}
+
+::-webkit-scrollbar-track {
+    background: #c0c0c0;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #808080;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+}
+
+@media (max-width: 768px) {
+    .project-content {
+        grid-template-columns: 1fr;
+    }
+
+    .project-title {
+        font-size: 22px;
+    }
+
+    .content {
+        padding: 15px;
+    }
+}
