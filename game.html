@@ -193,11 +193,42 @@
         let gameSpeed = 6;
         let gravity = 0.6;
 
-        // Load custom sprite
+        // Sprite configuration
         let playerSprite = null;
+        let spriteConfig = {
+            idleStart: 0,
+            idleEnd: 3,
+            walkStart: 4,
+            walkEnd: 11
+        };
+
         const selectedCharacterSprite = localStorage.getItem('selectedCharacter');
         
+        function detectSpriteFormat() {
+            // Check if it's a custom sprite (18 frames: 8 idle + 10 walking)
+            const customSpriteData = localStorage.getItem('customSpriteData');
+            if (customSpriteData && selectedCharacterSprite === 'custom') {
+                // Custom sprites have 8 idle (0-7) + 10 walking (8-17)
+                spriteConfig = {
+                    idleStart: 0,
+                    idleEnd: 7,
+                    walkStart: 8,
+                    walkEnd: 17
+                };
+            } else {
+                // Built-in sprites have 4 idle (0-3) + 8 walking (4-11)
+                spriteConfig = {
+                    idleStart: 0,
+                    idleEnd: 3,
+                    walkStart: 4,
+                    walkEnd: 11
+                };
+            }
+        }
+        
         function loadPlayerSprite() {
+            detectSpriteFormat();
+            
             const sprite = new Image();
             sprite.onload = () => {
                 playerSprite = sprite;
@@ -209,31 +240,25 @@
                 if (customSpriteData) {
                     sprite.src = customSpriteData;
                 } else {
-                    // Fallback: create simple square
-                    const fallback = document.createElement('canvas');
-                    fallback.width = 384;
-                    fallback.height = 32;
-                    const fallbackCtx = fallback.getContext('2d');
-                    fallbackCtx.fillStyle = '#e94560';
-                    for (let i = 0; i < 12; i++) {
-                        fallbackCtx.fillRect(i * 32, 0, 32, 32);
-                    }
-                    sprite.src = fallback.toDataURL();
+                    createFallbackSprite(sprite);
                 }
             } else if (selectedCharacterSprite) {
                 sprite.src = `./assets/sprites/${selectedCharacterSprite}.png`;
             } else {
-                // Fallback sprite
-                const fallback = document.createElement('canvas');
-                fallback.width = 384;
-                fallback.height = 32;
-                const fallbackCtx = fallback.getContext('2d');
-                fallbackCtx.fillStyle = '#e94560';
-                for (let i = 0; i < 12; i++) {
-                    fallbackCtx.fillRect(i * 32, 0, 32, 32);
-                }
-                sprite.src = fallback.toDataURL();
+                createFallbackSprite(sprite);
             }
+        }
+
+        function createFallbackSprite(sprite) {
+            const fallback = document.createElement('canvas');
+            fallback.width = 384;
+            fallback.height = 32;
+            const fallbackCtx = fallback.getContext('2d');
+            fallbackCtx.fillStyle = '#e94560';
+            for (let i = 0; i < 12; i++) {
+                fallbackCtx.fillRect(i * 32, 0, 30, 30);
+            }
+            sprite.src = fallback.toDataURL();
         }
 
         // Player
@@ -298,9 +323,11 @@
             score = 0;
             gameSpeed = 6;
             obstacles = [];
+            obstacleInterval = 100;
             player.y = 300;
             player.velY = 0;
             player.jumping = false;
+            player.currentFrame = spriteConfig.idleStart;
             gameOverScreen.classList.remove('visible');
         }
 
@@ -327,14 +354,23 @@
                 player.animationTimer = 0;
                 
                 if (player.jumping) {
-                    player.currentFrame = 0; // Idle frame when jumping
-                } else {
-                    // Running animation (frames 8-17)
-                    if (player.currentFrame < 8 || player.currentFrame > 17) {
-                        player.currentFrame = 8;
+                    // Cycle through idle frames when jumping
+                    if (player.currentFrame < spriteConfig.idleStart || player.currentFrame > spriteConfig.idleEnd) {
+                        player.currentFrame = spriteConfig.idleStart;
                     }
                     player.currentFrame++;
-                    if (player.currentFrame > 17) player.currentFrame = 8;
+                    if (player.currentFrame > spriteConfig.idleEnd) {
+                        player.currentFrame = spriteConfig.idleStart;
+                    }
+                } else {
+                    // Running animation when on ground
+                    if (player.currentFrame < spriteConfig.walkStart || player.currentFrame > spriteConfig.walkEnd) {
+                        player.currentFrame = spriteConfig.walkStart;
+                    }
+                    player.currentFrame++;
+                    if (player.currentFrame > spriteConfig.walkEnd) {
+                        player.currentFrame = spriteConfig.walkStart;
+                    }
                 }
             }
         }
