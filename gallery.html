@@ -80,19 +80,39 @@
             padding: 10px;
         }
 
-        /* Updated: use canvas instead of img */
         .sprite-card {
             background: rgba(15, 52, 96, 0.3);
             border: 2px solid #0f3460;
             border-radius: 8px;
             overflow: hidden;
             transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
         }
 
         .sprite-card:hover {
             transform: translateY(-5px);
             border-color: #e94560;
             box-shadow: 0 10px 20px rgba(233, 69, 96, 0.3);
+        }
+
+        .sprite-card.selected {
+            border-color: #ffd700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.6);
+        }
+
+        .sprite-card.selected::after {
+            content: '✓ SELECTED';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ffd700;
+            color: #1a1a2e;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 10;
         }
 
         .sprite-preview {
@@ -107,12 +127,9 @@
             border-bottom: 2px solid #0f3460;
         }
 
-        /* Canvas for animation */
         .sprite-preview canvas {
             image-rendering: pixelated;
             image-rendering: crisp-edges;
-            max-width: 128px; /* 4 frames × 32px */
-            max-height: 32px;
         }
 
         .sprite-info {
@@ -135,6 +152,24 @@
         .sprite-date {
             font-size: 12px;
             color: #666;
+        }
+
+        .use-sprite-btn {
+            margin-top: 10px;
+            background: #e94560;
+            color: white;
+            border: 2px solid white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .use-sprite-btn:hover {
+            background: #d63447;
+            transform: scale(1.05);
         }
 
         .empty-state {
@@ -175,6 +210,37 @@
             transform: scale(1.05);
         }
 
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .use-selected-btn {
+            background: #ffd700;
+            color: #1a1a2e;
+            border: 3px solid white;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .use-selected-btn.visible {
+            display: block;
+        }
+
+        .use-selected-btn:hover {
+            background: #ffed4e;
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
         .footer {
             text-align: center;
             margin-top: 40px;
@@ -202,8 +268,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>SPRITE GALLERY</h1>
-            <div class="subtitle">Community-created pixel art sprites</div>
+            <h1>🎨 SPRITE GALLERY</h1>
+            <div class="subtitle">Browse and use community-created pixel art sprites</div>
         </header>
 
         <div class="controls">
@@ -215,6 +281,10 @@
             </select>
         </div>
 
+        <div class="action-buttons">
+            <button id="useSelectedBtn" class="use-selected-btn">✓ Use Selected Sprite</button>
+        </div>
+
         <div class="gallery-grid" id="galleryGrid">
             <div class="empty-state">
                 <h2>⏳ Loading gallery...</h2>
@@ -222,15 +292,14 @@
             </div>
         </div>
 
-        <button id="backBtn" class="back-btn">← Back to Game</button>
+        <button id="backBtn" class="back-btn">← Back to Character Select</button>
 
         <div class="footer">
-            Share your own sprite in the character select screen!
+            Click on any sprite to select it, then click "Use Selected Sprite" to add it to your character list!
         </div>
     </div>
 
     <script>
-        // 🔥 REPLACE WITH YOUR REAL FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyAozzInC73HdInHcSGbZE4Wf5y_MtSQfR4",
             authDomain: "spritegallery-22c27.firebaseapp.com",
@@ -248,9 +317,10 @@
         const searchInput = document.getElementById('searchInput');
         const sortSelect = document.getElementById('sortSelect');
         const backBtn = document.getElementById('backBtn');
+        const useSelectedBtn = document.getElementById('useSelectedBtn');
 
-        // Store animation intervals to clean up if needed
         const animationIntervals = [];
+        let selectedSprite = null;
 
         function escapeHtml(text) {
             const div = document.createElement('div');
@@ -268,16 +338,14 @@
             });
         }
 
-        // ✨ Animate the first 4 frames of a sprite
         function animateSpritePreview(canvas, spriteImage) {
             const ctx = canvas.getContext('2d');
             const frameWidth = 32;
             const frameHeight = 32;
-            const scale = 2; // make it 64x64 in preview
+            const scale = 3;
             let frame = 0;
-            const idleFrames = [0, 1, 2, 3];
+            const idleFrames = [0, 1, 2, 3, 4, 5, 6, 7];
 
-            // Clear any existing animation
             const existingInterval = canvas.__interval;
             if (existingInterval) clearInterval(existingInterval);
 
@@ -287,7 +355,6 @@
                 const sx = currentFrame * frameWidth;
                 const sy = 0;
 
-                // Center the sprite in the canvas
                 const dx = (canvas.width - frameWidth * scale) / 2;
                 const dy = (canvas.height - frameHeight * scale) / 2;
 
@@ -305,7 +372,6 @@
         }
 
         function renderSprites(sprites) {
-            // Clear animations
             animationIntervals.forEach(id => clearInterval(id));
             animationIntervals.length = 0;
 
@@ -313,7 +379,7 @@
                 galleryGrid.innerHTML = `
                     <div class="empty-state">
                         <h2>🎨 No Sprites Yet</h2>
-                        <p>Be the first to share! Go to the character select screen, upload or draw a sprite, and click "Share Your Sprite!"</p>
+                        <p>Be the first to share! Go to the character select screen, create or upload a sprite, and click "Share Your Sprite!"</p>
                     </div>
                 `;
                 return;
@@ -323,14 +389,14 @@
             sprites.forEach(sprite => {
                 const card = document.createElement('div');
                 card.className = 'sprite-card';
+                card.dataset.spriteId = sprite.id;
 
-                // Create canvas for animation
                 const preview = document.createElement('div');
                 preview.className = 'sprite-preview';
 
                 const canvas = document.createElement('canvas');
-                canvas.width = 128; // enough space (64px scaled)
-                canvas.height = 64;
+                canvas.width = 160;
+                canvas.height = 160;
                 preview.appendChild(canvas);
 
                 const info = document.createElement('div');
@@ -345,10 +411,24 @@
                 card.appendChild(info);
                 galleryGrid.appendChild(card);
 
-                // Load image and animate
+                // Click to select
+                card.addEventListener('click', () => {
+                    document.querySelectorAll('.sprite-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    selectedSprite = sprite;
+                    useSelectedBtn.classList.add('visible');
+                });
+
                 const img = new Image();
                 img.onload = () => {
                     animateSpritePreview(canvas, img);
+                };
+                img.onerror = () => {
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#666';
+                    ctx.font = '14px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Failed to load', canvas.width / 2, canvas.height / 2);
                 };
                 img.src = sprite.image;
             });
@@ -390,11 +470,33 @@
             }
         }
 
+        // Use selected sprite
+        useSelectedBtn.addEventListener('click', () => {
+            if (!selectedSprite) {
+                alert('Please select a sprite first!');
+                return;
+            }
+
+            // Save the selected sprite from gallery
+            const spriteData = {
+                name: selectedSprite.name,
+                image: selectedSprite.image,
+                fromGallery: true,
+                author: selectedSprite.author
+            };
+
+            localStorage.setItem('customSpriteData', JSON.stringify(spriteData));
+            localStorage.setItem('selectedCharacter', 'custom');
+            localStorage.setItem('customSprite', selectedSprite.image);
+
+            alert(`✅ "${selectedSprite.name}" by ${selectedSprite.author} added to your character list!`);
+            window.location.href = 'character-select.html';
+        });
+
         searchInput.addEventListener('input', loadAndRender);
         sortSelect.addEventListener('change', loadAndRender);
-        backBtn.addEventListener('click', () => window.location.href = "character-select.html");
+        backBtn.addEventListener('click', () => window.location.href = 'character-select.html');
 
-        // Clean up on unload
         window.addEventListener('beforeunload', () => {
             animationIntervals.forEach(id => clearInterval(id));
         });
