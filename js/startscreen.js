@@ -72,7 +72,7 @@ const doors = [
         height: 80, 
         label: 'RESUME',
         url: './resume.html',
-    }
+    },
     {
         x: 500, 
         y: groundY - 80, 
