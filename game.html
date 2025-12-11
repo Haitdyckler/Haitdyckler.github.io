@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Runner Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Courier New', monospace;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            position: relative;
+            width: 800px;
+            height: 400px;
+            background: #16213e;
+            border: 4px solid #e94560;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .score {
+            font-size: 24px;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .game-over-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 52, 96, 0.95);
+            border: 3px solid #e94560;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            display: none;
+            z-index: 20;
+        }
+
+        .game-over-screen.visible {
+            display: block;
+        }
+
+        .game-over-screen h1 {
+            font-size: 48px;
+            color: #e94560;
+            margin-bottom: 20px;
+        }
+
+        .game-over-screen .final-score {
+            font-size: 32px;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+
+        .restart-btn, .menu-btn {
+            background: #e94560;
+            color: white;
+            border: 3px solid white;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 20px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .restart-btn:hover, .menu-btn:hover {
+            background: #d63447;
+            transform: scale(1.05);
+        }
+
+        .menu-btn {
+            background: #0f3460;
+            border-color: #e94560;
+        }
+
+        .menu-btn:hover {
+            background: #1a5490;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 16px;
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 15;
+        }
+
+        .start-screen h2 {
+            font-size: 36px;
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+
+        .start-screen p {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 850px) {
+            .game-container {
+                width: 95vw;
+                height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        
+        <div class="ui-overlay">
+            <div class="score">Score: <span id="scoreDisplay">0</span></div>
+            <div class="score">High Score: <span id="highScoreDisplay">0</span></div>
+        </div>
+
+        <div class="start-screen" id="startScreen">
+            <h2>PRESS SPACE TO START</h2>
+            <p>SPACE or UP ARROW = Jump</p>
+            <p>DOWN ARROW = Duck</p>
+        </div>
+
+        <div class="game-over-screen" id="gameOverScreen">
+            <h1>GAME OVER!</h1>
+            <div class="final-score">Score: <span id="finalScore">0</span></div>
+            <button class="restart-btn" id="restartBtn">RESTART</button>
+            <button class="menu-btn" id="menuBtn">MAIN MENU</button>
+            <div class="instructions">Press SPACE to restart</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const startScreen = document.getElementById('startScreen');
+        const finalScore = document.getElementById('finalScore');
+        const restartBtn = document.getElementById('restartBtn');
+        const menuBtn = document.getElementById('menuBtn');
+
+        // Game state
+        let gameStarted = false;
+        let gameOver = false;
+        let score = 0;
+        let highScore = localStorage.getItem('dinoHighScore') || 0;
+        let gameSpeed = 6;
+        let gravity = 0.6;
+
+        // Load custom sprite
+        let playerSprite = null;
+        const selectedCharacterSprite = localStorage.getItem('selectedCharacter');
+        
+        function loadPlayerSprite() {
+            const sprite = new Image();
+            sprite.onload = () => {
+                playerSprite = sprite;
+                gameLoop();
+            };
+
+            if (selectedCharacterSprite === 'custom') {
+                const customSpriteData = localStorage.getItem('customSprite');
+                if (customSpriteData) {
+                    sprite.src = customSpriteData;
+                } else {
+                    // Fallback: create simple square
+                    const fallback = document.createElement('canvas');
+                    fallback.width = 384;
+                    fallback.height = 32;
+                    const fallbackCtx = fallback.getContext('2d');
+                    fallbackCtx.fillStyle = '#e94560';
+                    for (let i = 0; i < 12; i++) {
+                        fallbackCtx.fillRect(i * 32, 0, 32, 32);
+                    }
+                    sprite.src = fallback.toDataURL();
+                }
+            } else if (selectedCharacterSprite) {
+                sprite.src = `./assets/sprites/${selectedCharacterSprite}.png`;
+            } else {
+                // Fallback sprite
+                const fallback = document.createElement('canvas');
+                fallback.width = 384;
+                fallback.height = 32;
+                const fallbackCtx = fallback.getContext('2d');
+                fallbackCtx.fillStyle = '#e94560';
+                for (let i = 0; i < 12; i++) {
+                    fallbackCtx.fillRect(i * 32, 0, 32, 32);
+                }
+                sprite.src = fallback.toDataURL();
+            }
+        }
+
+        // Player
+        const player = {
+            x: 100,
+            y: 300,
+            width: 32,
+            height: 32,
+            velY: 0,
+            jumping: false,
+            ducking: false,
+            currentFrame: 0,
+            animationTimer: 0,
+            animationSpeed: 8
+        };
+
+        // Ground
+        const groundY = 350;
+
+        // Obstacles
+        let obstacles = [];
+        let obstacleTimer = 0;
+        let obstacleInterval = 100;
+
+        // Keys
+        const keys = {};
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            
+            if (!gameStarted && (e.key === ' ' || e.key === 'ArrowUp')) {
+                startGame();
+            }
+            
+            if (gameOver && e.key === ' ') {
+                restartGame();
+            }
+
+            if ((e.key === ' ' || e.key === 'ArrowUp') && !player.jumping && !gameOver) {
+                player.velY = -12;
+                player.jumping = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        restartBtn.addEventListener('click', restartGame);
+        menuBtn.addEventListener('click', () => {
+            window.location.href = 'startscreen.html';
+        });
+
+        function startGame() {
+            gameStarted = true;
+            startScreen.style.display = 'none';
+        }
+
+        function restartGame() {
+            gameOver = false;
+            gameStarted = true;
+            score = 0;
+            gameSpeed = 6;
+            obstacles = [];
+            player.y = 300;
+            player.velY = 0;
+            player.jumping = false;
+            gameOverScreen.classList.remove('visible');
+        }
+
+        function updatePlayer() {
+            if (gameOver) return;
+
+            // Ducking
+            player.ducking = keys['arrowdown'] && !player.jumping;
+
+            // Gravity
+            player.velY += gravity;
+            player.y += player.velY;
+
+            // Ground collision
+            if (player.y >= groundY - player.height) {
+                player.y = groundY - player.height;
+                player.velY = 0;
+                player.jumping = false;
+            }
+
+            // Animation
+            player.animationTimer++;
+            if (player.animationTimer >= 60 / player.animationSpeed) {
+                player.animationTimer = 0;
+                
+                if (player.jumping) {
+                    player.currentFrame = 0; // Idle frame when jumping
+                } else {
+                    // Running animation (frames 8-17)
+                    if (player.currentFrame < 8 || player.currentFrame > 17) {
+                        player.currentFrame = 8;
+                    }
+                    player.currentFrame++;
+                    if (player.currentFrame > 17) player.currentFrame = 8;
+                }
+            }
+        }
+
+        function drawPlayer() {
+            if (!playerSprite) return;
+
+            const sx = player.currentFrame * 32;
+            const sy = 0;
+            
+            const drawHeight = player.ducking ? player.height / 2 : player.height;
+            const drawY = player.ducking ? player.y + player.height / 2 : player.y;
+
+            ctx.drawImage(
+                playerSprite,
+                sx, sy, 32, 32,
+                player.x, drawY, player.width, drawHeight
+            );
+        }
+
+        function updateObstacles() {
+            if (gameOver || !gameStarted) return;
+
+            obstacleTimer++;
+            if (obstacleTimer > obstacleInterval) {
+                obstacleTimer = 0;
+                const height = Math.random() > 0.5 ? 40 : 60;
+                const type = Math.random() > 0.3 ? 'cactus' : 'bird';
+                const y = type === 'bird' ? groundY - 80 : groundY - height;
+                
+                obstacles.push({
+                    x: canvas.width,
+                    y: y,
+                    width: 30,
+                    height: height,
+                    type: type
+                });
+
+                // Increase difficulty
+                if (obstacleInterval > 60) {
+                    obstacleInterval -= 0.5;
+                }
+            }
+
+            obstacles.forEach((obstacle, index) => {
+                obstacle.x -= gameSpeed;
+
+                // Remove off-screen obstacles
+                if (obstacle.x + obstacle.width < 0) {
+                    obstacles.splice(index, 1);
+                    score += 10;
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('dinoHighScore', highScore);
+                    }
+                    scoreDisplay.textContent = score;
+                    highScoreDisplay.textContent = highScore;
+
+                    // Increase speed
+                    if (score % 100 === 0) {
+                        gameSpeed += 0.5;
+                    }
+                }
+
+                // Collision detection
+                const playerHitbox = {
+                    x: player.x + 5,
+                    y: player.ducking ? player.y + player.height / 2 + 5 : player.y + 5,
+                    width: player.width - 10,
+                    height: player.ducking ? player.height / 2 - 10 : player.height - 10
+                };
+
+                if (
+                    playerHitbox.x < obstacle.x + obstacle.width &&
+                    playerHitbox.x + playerHitbox.width > obstacle.x &&
+                    playerHitbox.y < obstacle.y + obstacle.height &&
+                    playerHitbox.y + playerHitbox.height > obstacle.y
+                ) {
+                    gameOver = true;
+                    finalScore.textContent = score;
+                    gameOverScreen.classList.add('visible');
+                }
+            });
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                if (obstacle.type === 'cactus') {
+                    ctx.fillStyle = '#0f3460';
+                    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                    
+                    // Add spikes
+                    ctx.fillStyle = '#e94560';
+                    for (let i = 0; i < 3; i++) {
+                        ctx.fillRect(
+                            obstacle.x + 5 + i * 8,
+                            obstacle.y - 5,
+                            5,
+                            10
+                        );
+                    }
+                } else {
+                    // Bird
+                    ctx.fillStyle = '#e94560';
+                    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, 20);
+                    ctx.fillRect(obstacle.x + 5, obstacle.y + 5, 20, 10);
+                }
+            });
+        }
+
+        function drawGround() {
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+            
+            // Ground line
+            ctx.strokeStyle = '#e94560';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(canvas.width, groundY);
+            ctx.stroke();
+        }
+
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#16213e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Stars
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 30; i++) {
+                const x = (i * 73 + score) % canvas.width;
+                const y = (i * 41) % (groundY - 50);
+                const size = (i % 3) + 1;
+                ctx.fillRect(x, y, size, size);
+            }
+        }
+
+        function gameLoop() {
+            drawBackground();
+            drawGround();
+            
+            if (gameStarted) {
+                updatePlayer();
+                updateObstacles();
+            }
+            
+            drawPlayer();
+            drawObstacles();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        highScoreDisplay.textContent = highScore;
+        loadPlayerSprite();
+    </script>
+</body>
+</html>
