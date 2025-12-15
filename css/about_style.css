@@ -112,10 +112,12 @@ body {
 }
 
 .profile-image {
-    width: 180px;
-    height: 180px;
+    width: 200px;
+    height: 200px;
     border-radius: 50%;
     background-image: url('../assets/sprites/my_sprite.png');
+    background-size: cover;
+    image-rendering: pixelated;
     border:1px solid #c0c0c0;
     box-shadow: 
         inset 2px 2px 4px rgba(0, 0, 0, 0.3);
