@@ -8,27 +8,31 @@
 </head>
 <body>
     <div class="desktop">
-        <!-- Desktop Icons (Top Left) -->
+        <!-- Desktop Icons -->
         <div class="desktop-icons">
-            <div class="desktop-icon" data-href="projects.html">
+            <div class="desktop-icon" data-window="projects">
                 <img src="assets/projects_icon.png" alt="Projects" class="icon-image">
                 <span class="icon-label">Projects</span>
             </div>
-            <div class="desktop-icon" data-href="about.html">
+            <div class="desktop-icon" data-window="about">
                 <img src="assets/about_icon.png" alt="About Me" class="icon-image">
                 <span class="icon-label">About Me</span>
             </div>
-            <div class="desktop-icon" data-href="contact.html">
+            <div class="desktop-icon" data-window="contact">
                 <img src="assets/contacts_icon.png" alt="Contact" class="icon-image">
                 <span class="icon-label">Contact</span>
             </div>
-            <div class="desktop-icon" data-href="resume.html">
+            <div class="desktop-icon" id="ResumeIcon">
                 <img src="assets/resume_icon.png" alt="Resume" class="icon-image">
                 <span class="icon-label">Resume</span>
             </div>
+            <div class="desktop-icon" id="arcadeStartIcon">
+        <img src="assets/start.png" alt="Start Game" class="icon-image">
+        <span class="icon-label">Play</span>
+    </div>
         </div>
 
-        <!-- Window -->
+        <!-- Introduction Window -->
         <div class="window active" id="introWindow">
             <div class="title-bar" id="titleBar">
                 <div class="title-bar-text">
@@ -45,10 +49,211 @@
             </div>
         </div>
 
-        <!-- Arcade Machine Start Button (Single PNG + Glow) -->
-        <div class="arcade-start-button" id="startButton">
-            <img src="assets/start.png" alt="Start Game" class="start-button-image">
+        <!-- About Window -->
+        <div class="window" id="aboutWindow">
+            <div class="title-bar" id="aboutTitleBar">
+                <div class="title-bar-text">
+                    <span class="title-bar-icon"></span>
+                    About - Hardy Amuntai
+                </div>
+                <div class="title-bar-controls">
+                    <button class="title-bar-btn" id="aboutMinimizeBtn">_</button>
+                    <button class="title-bar-btn" id="aboutCloseBtn">×</button>
+                </div>
+            </div>
+
+            <div class="menu-bar">
+                <span class="menu-item">File</span>
+                <span class="menu-item">Edit</span>
+                <span class="menu-item">View</span>
+                <span class="menu-item">Help</span>
+            </div>
+
+            <div class="content">
+                <div class="about-card">
+                    <div class="profile-section">
+                        <div class="profile-image"></div>
+                        <div class="profile-name">Hardy Amuntai</div>
+                    </div>
+
+                    <div class="about-text">
+                        <h1>About</h1>
+                        <p>
+                            Hi, my name is Hardy Amuntai. I'm a computer science graduate from Tamkang University, Taipei. With a specialty towards UI/UX design, front-end developer and Java. I'm passionate about games, art and music. I've had plenty of experience working with other people with a variety of projects from making a fully functioning website to a Machine learning Model. I also have a hobby of drawing that led me into pixel art.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-item">Ready</div>
+                <div class="status-item">Portfolio v1.0</div>
+            </div>
         </div>
+
+        <!-- Projects Window -->
+        <div class="window" id="projectsWindow">
+            <div class="title-bar" id="projectsTitleBar">
+                <div class="title-bar-text">
+                    <span class="title-bar-icon"></span>
+                    Projects - Hardy Amuntai
+                </div>
+                <div class="title-bar-controls">
+                    <button class="title-bar-btn" id="projectsMinimizeBtn">_</button>
+                    <button class="title-bar-btn" id="projectsCloseBtn">×</button>
+                </div>
+            </div>
+
+            <div class="menu-bar">
+                <span class="menu-item">File</span>
+                <span class="menu-item">Edit</span>
+                <span class="menu-item">View</span>
+                <span class="menu-item">Help</span>
+            </div>
+
+            <div class="content" id="projectsContent">
+                <!-- Project 1: Pom-Pom Adventure -->
+                <div class="project-card">
+                    <h2 class="project-title">Pom-Pom Adventure</h2>
+                    <div class="project-content">
+                        <div class="project-description">
+                            <p>For OOP(Object Oriented Programming) project, my group and I made a game in Unity.</p>
+                            <p>I helped in the game development process, and made all the assets in game, such as making sprites and the maps.</p>
+                            <p>The reason we chose to make a game, is that we had to make a functional program with animations, so instead of just making a boring calculator or something, we're making a game.</p>
+                        </div>
+                        <div class="project-images">
+                            <div class="main-image">
+                                <img src="assets/pom-pom-game.png" alt="Pom-Pom Adventure Game">
+                            </div>
+                            <div class="character-sprites">
+                                <img src="assets/pom-pom-sprites.png" alt="Character Sprites">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 2: Eternal Fantasy -->
+                <div class="project-card">
+                    <h2 class="project-title">Eternal Fantasy</h2>
+                    <div class="project-content">
+                        <div class="project-description">
+                            <p>For My senior project, my team and I chose to make a turn-based JRPG game which was inspired by Final Fantasy. We incorporated the use of an AI model for the enemy. I helped in making the AI design, all the sprite and game assets for the game.</p>
+                            <p>This makes it so no longer you play the game, the more accustomed the AI will be to your play style. Making the game more challenging as the time goes.</p>
+                            <p>To why my team and I decided to make a game, we wanted to further sharpen our game development skills why also implementing new mechanics like AI integration.</p>
+                        </div>
+                        <div class="project-images">
+                            <div class="game-screenshots">
+                                <img src="assets/eternal-fantasy-1.png" alt="Eternal Fantasy Menu">
+                                <img src="assets/eternal-fantasy-2.png" alt="Eternal Fantasy Gameplay">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project 3: Arduino Alarm Clock -->
+                <div class="project-card">
+                    <h2 class="project-title">Arduino Alarm Clock</h2>
+                    <div class="project-content">
+                        <div class="project-description">
+                            <p>For My IoT project, I made an Arduino Alarm clock, that ran from an esp32. The circuit was equipped with humidity sensors, 4 buttons to set the time for the alarm, an lcd screen, speaker and a motion sensor.</p>
+                            <p>When equipped with more functions with a Wi-Fi, I was able to connect the board to the internet and make the clock run on normal where it is, an you read would be a good supply to power for at least a week. The alarm clock also has a feature where people have grown to dread silencing their alarms and going back to sleep — my alarm clock has a motion sensor that detects, after the alarm has rung, if the user has not moved; the alarm will automatically turn on again.</p>
+                            <p>The reason I chose to do this project is because I've always been interested in circuitry, and this gave me a chance to actually learn and experiment. I took the opportunity to create a functional, reusable, and fun device that utilizes IoT and portability.</p>
+                        </div>
+                        <div class="project-images">
+                            <div class="hardware-images">
+                                <img src="assets/arduino-clock-1.png" alt="Arduino Alarm Clock Front">
+                                <img src="assets/arduino-clock-2.png" alt="Arduino Alarm Clock Back">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-item">Ready</div>
+                <div class="status-item">3 Projects Loaded</div>
+            </div>
+        </div>
+
+        <!-- Contacts Window -->
+        <div class="window" id="contactsWindow">
+            <div class="title-bar" id="contactsTitleBar">
+                <div class="title-bar-text">
+                    <span class="title-bar-icon"></span>
+                    Contacts - Hardy Amuntai
+                </div>
+                <div class="title-bar-controls">
+                    <button class="title-bar-btn" id="contactsMinimizeBtn">_</button>
+                    <button class="title-bar-btn" id="contactsCloseBtn">×</button>
+                </div>
+            </div>
+
+            <div class="menu-bar">
+                <span class="menu-item">File</span>
+                <span class="menu-item">Edit</span>
+                <span class="menu-item">View</span>
+                <span class="menu-item">Help</span>
+            </div>
+
+            <div class="content">
+                <div class="header-section">
+                    <h1>📬 Contact Information</h1>
+                    <p class="subtitle">Feel free to reach out to me through any of these platforms!</p>
+                </div>
+
+                <div class="contact-box">
+                    <div class="box-header">
+                        <span class="folder-icon">📁</span>
+                        <span>Browse Contact Methods</span>
+                    </div>
+                    <div class="contact-grid">
+                        <div class="contact-section">
+                            <div class="section-title">
+                                <span class="globe-icon">🌐</span>
+                                <span>Social & Professional</span>
+                            </div>
+                            <ul class="contact-list">
+                                <li>
+                                    <span class="link-icon">🔗</span>
+                                    <a href="https://github.com/haitdyckler" target="_blank">GitHub Profile</a>
+                                </li>
+                                <li>
+                                    <span class="link-icon">🔗</span>
+                                    <a href="https://linkedin.com/in/hardy-amuntai" target="_blank">LinkedIn Profile</a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="contact-section">
+                            <div class="section-title">
+                                <span class="globe-icon">📞</span>
+                                <span>Direct Contact</span>
+                            </div>
+                            <ul class="contact-list">
+                                <li>
+                                    <span class="link-icon">✉️</span>
+                                    <a href="mailto:hardyamuntai@gmail.com">hardyamuntai@gmail.com</a>
+                                </li>
+                                <li>
+                                    <span class="link-icon">📱</span>
+                                    <a href="tel:+886908584171">+886 908 584 171</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <p>💡 <strong>Note:</strong> Click on any link above to connect with me. All links open in a new tab!</p>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-item">Ready</div>
+                <div class="status-item">4 Contact Methods Available</div>
+            </div>
+        </div>
+
 
         <!-- Taskbar -->
         <div class="taskbar">
@@ -56,13 +261,26 @@
                 <span class="start-icon">🪟</span>
                 Start
             </button>
-            <div class="taskbar-window" id="taskbarWindow">
+            <div class="taskbar-window visible active" id="taskbarIntro">
                 <span class="title-bar-icon"></span>
                 Introduction
+            </div>
+            <div class="taskbar-window" id="taskbarAbout" style="display: none;">
+                <span class="title-bar-icon"></span>
+                About - Hardy Amuntai
+            </div>
+            <div class="taskbar-window" id="taskbarProjects" style="display: none;">
+                <span class="title-bar-icon"></span>
+                Projects - Hardy Amuntai
+            </div>
+            <div class="taskbar-window" id="taskbarContacts" style="display: none;">
+                <span class="title-bar-icon"></span>
+                Contacts - Hardy Amuntai
             </div>
             <div class="taskbar-clock" id="clock">12:00 PM</div>
         </div>
     </div>
+
     <script src="js/script.js"></script>
 </body>
 </html>

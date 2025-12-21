@@ -1,12 +1,35 @@
+// ===== DOM Elements =====
 const fullText = "My name is Hardy Amuntai. I am an Indonesian student majoring computer science at 淡江大學. With a great interest towards game & web development.";
 const typingElement = document.getElementById('typingText');
 const introWindow = document.getElementById('introWindow');
-const taskbarWindow = document.getElementById('taskbarWindow');
+const aboutWindow = document.getElementById('aboutWindow');
+const projectsWindow = document.getElementById('projectsWindow');
+const contactsWindow = document.getElementById('contactsWindow');
+
+const taskbarIntro = document.getElementById('taskbarIntro');
+const taskbarAbout = document.getElementById('taskbarAbout');
+const taskbarProjects = document.getElementById('taskbarProjects');
+const taskbarContacts = document.getElementById('taskbarContacts');
+
 const closeBtn = document.getElementById('closeBtn');
 const minimizeBtn = document.getElementById('minimizeBtn');
 const titleBar = document.getElementById('titleBar');
+
+const aboutCloseBtn = document.getElementById('aboutCloseBtn');
+const aboutMinimizeBtn = document.getElementById('aboutMinimizeBtn');
+const aboutTitleBar = document.getElementById('aboutTitleBar');
+
+const projectsCloseBtn = document.getElementById('projectsCloseBtn');
+const projectsMinimizeBtn = document.getElementById('projectsMinimizeBtn');
+const projectsTitleBar = document.getElementById('projectsTitleBar');
+
+const contactsCloseBtn = document.getElementById('contactsCloseBtn');
+const contactsMinimizeBtn = document.getElementById('contactsMinimizeBtn');
+const contactsTitleBar = document.getElementById('contactsTitleBar');
+
 let i = 0;
 
+// ===== Typing Animation =====
 function typeWriter() {
     if (i < fullText.length) {
         typingElement.textContent += fullText.charAt(i);
@@ -16,84 +39,125 @@ function typeWriter() {
         typingElement.classList.add('finished');
     }
 }
-
-// Start typing animation
 setTimeout(typeWriter, 500);
 
-// Clock
+// ===== Clock =====
 function updateClock() {
     const now = new Date();
     const hours = now.getHours() % 12 || 12;
-    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
     const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
     document.getElementById('clock').textContent = `${hours}:${minutes} ${ampm}`;
 }
 updateClock();
 setInterval(updateClock, 60000);
 
-// Close window
-closeBtn.addEventListener('click', () => {
-    introWindow.classList.remove('active');
-    taskbarWindow.classList.remove('active');
-});
-
-// Minimize window
-minimizeBtn.addEventListener('click', () => {
-    introWindow.classList.remove('active');
-    taskbarWindow.classList.remove('active');
-});
-
-// Restore window from taskbar
-taskbarWindow.addEventListener('click', () => {
-    if (introWindow.classList.contains('active')) {
-        introWindow.classList.remove('active');
-        taskbarWindow.classList.remove('active');
-    } else {
-        introWindow.classList.add('active');
-        taskbarWindow.classList.add('active');
+// ===== Window Management Helpers =====
+function openWindow(windowEl, taskbarBtn) {
+    windowEl.classList.add('active');
+    if (taskbarBtn) {
+        taskbarBtn.style.display = 'flex';
+        taskbarBtn.classList.add('active');
     }
-});
+}
 
-// Draggable window
-let isDragging = false;
-let currentX;
-let currentY;
-let initialX;
-let initialY;
+function minimizeWindow(windowEl, taskbarBtn) {
+    windowEl.classList.remove('active');
+    if (taskbarBtn) taskbarBtn.classList.remove('active');
+}
 
-titleBar.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    initialX = e.clientX - introWindow.offsetLeft;
-    initialY = e.clientY - introWindow.offsetTop;
-    introWindow.style.transform = 'none'; // Prevent transform conflict
-});
-
-document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-        e.preventDefault();
-        currentX = e.clientX - initialX;
-        currentY = e.clientY - initialY;
-        introWindow.style.left = currentX + 'px';
-        introWindow.style.top = currentY + 'px';
-        introWindow.style.position = 'absolute'; // Ensure absolute positioning
+function closeWindow(windowEl, taskbarBtn) {
+    windowEl.classList.remove('active');
+    if (taskbarBtn) {
+        taskbarBtn.classList.remove('active');
+        taskbarBtn.style.display = 'none';
     }
+}
+
+// ===== Event Listeners =====
+
+// Intro
+closeBtn?.addEventListener('click', () => closeWindow(introWindow, taskbarIntro));
+minimizeBtn?.addEventListener('click', () => minimizeWindow(introWindow, taskbarIntro));
+taskbarIntro?.addEventListener('click', () => {
+    introWindow.classList.contains('active') ? minimizeWindow(introWindow, taskbarIntro) : openWindow(introWindow, taskbarIntro);
 });
 
-document.addEventListener('mouseup', () => {
-    isDragging = false;
+// About
+aboutCloseBtn?.addEventListener('click', () => closeWindow(aboutWindow, taskbarAbout));
+aboutMinimizeBtn?.addEventListener('click', () => minimizeWindow(aboutWindow, taskbarAbout));
+taskbarAbout?.addEventListener('click', () => {
+    aboutWindow.classList.contains('active') ? minimizeWindow(aboutWindow, taskbarAbout) : openWindow(aboutWindow, taskbarAbout);
 });
 
-// Start button (image-based container)
-document.getElementById('startButton').addEventListener('click', () => {
-    window.location.href = 'character-select.html';
+// Projects
+projectsCloseBtn?.addEventListener('click', () => closeWindow(projectsWindow, taskbarProjects));
+projectsMinimizeBtn?.addEventListener('click', () => minimizeWindow(projectsWindow, taskbarProjects));
+taskbarProjects?.addEventListener('click', () => {
+    projectsWindow.classList.contains('active') ? minimizeWindow(projectsWindow, taskbarProjects) : openWindow(projectsWindow, taskbarProjects);
 });
 
-// Desktop Icons Navigation
+// Contacts
+contactsCloseBtn?.addEventListener('click', () => closeWindow(contactsWindow, taskbarContacts));
+contactsMinimizeBtn?.addEventListener('click', () => minimizeWindow(contactsWindow, taskbarContacts));
+taskbarContacts?.addEventListener('click', () => {
+    contactsWindow.classList.contains('active') ? minimizeWindow(contactsWindow, taskbarContacts) : openWindow(contactsWindow, taskbarContacts);
+});
+
+// Desktop Icons
 document.querySelectorAll('.desktop-icon').forEach(icon => {
-    icon.addEventListener('click', function() {
-        const href = this.getAttribute('data-href');
-        if (href) {
-            window.location.href = href;
-        }
+    icon.addEventListener('click', () => {
+        const type = icon.dataset.window;
+        if (type === 'about') openWindow(aboutWindow, taskbarAbout);
+        else if (type === 'projects') openWindow(projectsWindow, taskbarProjects);
+        else if (type === 'contact') openWindow(contactsWindow, taskbarContacts);
     });
 });
+
+// Start Button
+document.getElementById('arcadeStartIcon')?.addEventListener('click', () => {
+    window.location.href = 'character-select.html';
+});
+document.getElementById('ResumeIcon')?.addEventListener('click', () => {
+    window.location.href = 'resume.html';
+});
+
+// ===== DRAG SYSTEM — FIXED (no jump, ignores buttons) =====
+function makeWindowDraggable(windowEl, titleBarEl) {
+    if (!windowEl || !titleBarEl) return;
+
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    titleBarEl.addEventListener('mousedown', (e) => {
+        // Ignore if clicked on a button
+        if (e.target.closest('.title-bar-btn')) return;
+
+        isDragging = true;
+        const rect = windowEl.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+
+        windowEl.style.position = 'absolute';
+        windowEl.style.transform = 'none';
+        windowEl.style.left = rect.left + 'px';
+        windowEl.style.top = rect.top + 'px';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        windowEl.style.left = (e.clientX - offsetX) + 'px';
+        windowEl.style.top = (e.clientY - offsetY) + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+}
+
+// Initialize all draggable windows
+makeWindowDraggable(introWindow, titleBar);
+makeWindowDraggable(aboutWindow, aboutTitleBar);
+makeWindowDraggable(projectsWindow, projectsTitleBar);
+makeWindowDraggable(contactsWindow, contactsTitleBar);
