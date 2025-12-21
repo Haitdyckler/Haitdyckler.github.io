@@ -8,27 +8,27 @@
 </head>
 <body>
     <div class="desktop">
-        <!-- Desktop Icons (Top Left) -->
+        <!-- Desktop Icons -->
         <div class="desktop-icons">
-            <div class="desktop-icon" data-href="projects.html">
+            <div class="desktop-icon" data-window="projects">
                 <img src="assets/projects_icon.png" alt="Projects" class="icon-image">
                 <span class="icon-label">Projects</span>
             </div>
-            <div class="desktop-icon" data-href="about.html">
+            <div class="desktop-icon" data-window="about">
                 <img src="assets/about_icon.png" alt="About Me" class="icon-image">
                 <span class="icon-label">About Me</span>
             </div>
-            <div class="desktop-icon" data-href="contact.html">
+            <div class="desktop-icon" data-window="contact">
                 <img src="assets/contacts_icon.png" alt="Contact" class="icon-image">
                 <span class="icon-label">Contact</span>
             </div>
-            <div class="desktop-icon" data-href="resume.html">
+            <div class="desktop-icon" data-window="resume">
                 <img src="assets/resume_icon.png" alt="Resume" class="icon-image">
                 <span class="icon-label">Resume</span>
             </div>
         </div>
 
-        <!-- Window -->
+        <!-- Introduction Window -->
         <div class="window active" id="introWindow">
             <div class="title-bar" id="titleBar">
                 <div class="title-bar-text">
@@ -45,7 +45,48 @@
             </div>
         </div>
 
-        <!-- Arcade Machine Start Button (Single PNG + Glow) -->
+        <!-- About Window -->
+        <div class="window" id="aboutWindow">
+            <div class="title-bar">
+                <div class="title-text">
+                    <div class="title-icon"></div>
+                    About - Hardy Amuntai
+                </div>
+                <div class="title-buttons">
+                    <div class="title-button" id="aboutMinimizeBtn">_</div>
+                    <div class="title-button">□</div>
+                    <div class="title-button" id="aboutCloseBtn">×</div>
+                </div>
+            </div>
+
+            <div class="menu-bar">
+                <span class="menu-item">File</span>
+                <span class="menu-item">Edit</span>
+                <span class="menu-item">View</span>
+                <span class="menu-item">Help</span>
+            </div>
+
+            <div class="content">
+                <div class="profile-section">
+                    <div class="profile-image"></div>
+                    <div class="profile-name">Hardy Amuntai</div>
+                </div>
+
+                <div class="about-text">
+                    <h1>About</h1>
+                    <p>
+                        Hi, my name is Hardy Amuntai. I'm a computer science graduate from Tamkang University, Taipei. With a specialty towards UI/UX design, front-end developer and Java. I'm passionate about games, art and music. I've had plenty of experience working with other people with a variety of projects from making a fully functioning website to a Machine learning Model. I also have a hobby of drawing that led me into pixel art.
+                    </p>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-item">Ready</div>
+                <div class="status-item">Portfolio v1.0</div>
+            </div>
+        </div>
+
+        <!-- Arcade Machine Start Button -->
         <div class="arcade-start-button" id="startButton">
             <img src="assets/start.png" alt="Start Game" class="start-button-image">
         </div>
@@ -56,13 +97,18 @@
                 <span class="start-icon">🪟</span>
                 Start
             </button>
-            <div class="taskbar-window" id="taskbarWindow">
+            <div class="taskbar-window visible active" id="taskbarIntro">
                 <span class="title-bar-icon"></span>
                 Introduction
+            </div>
+            <div class="taskbar-window" id="taskbarAbout" style="display: none;">
+                <span class="title-bar-icon"></span>
+                About - Hardy Amuntai
             </div>
             <div class="taskbar-clock" id="clock">12:00 PM</div>
         </div>
     </div>
+
     <script src="js/script.js"></script>
 </body>
 </html>
