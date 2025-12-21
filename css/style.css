@@ -173,6 +173,29 @@ body {
 @keyframes blink {
     50% { border-color: transparent; }
 }
+@media (max-width: 768px) {
+    #introWindow {
+        width: 70%;           /* Take up more horizontal space */
+        height: auto;         /* Allow height to grow with content */
+        padding: 15px;        /* Add internal padding for breathing room */
+        top: 40px;            /* Position near top instead of center */
+        left: 58%;
+        transform: translateX(-50%); /* Only center horizontally */
+        max-height: 80vh;     /* Prevent it from getting too tall */
+        overflow-y: auto;     /* Allow scrolling if text is long */
+    }
+
+    #introWindow .window-body {
+        padding: 10px;        /* Reduce padding inside body */
+        min-height: auto;     /* Remove fixed min-height */
+    }
+
+    .typing-text {
+        font-size: 13px;      /* Slightly smaller font for mobile */
+        line-height: 1.6;     /* Keep good readability */
+        word-break: break-word; /* Prevent overflow on long words */
+    }
+}
 
 /* ===== About Window ===== */
 #aboutWindow {
@@ -258,6 +281,48 @@ body {
     border: none;
     margin-bottom: 0;
     text-align: justify;
+}
+@media (max-width: 768px) {
+    #aboutWindow {
+        width: 95%;
+        height: 90vh;
+        padding: 15px;
+    }
+
+    .about-card {
+        flex-direction: column;
+        align-items: center; /* Center everything horizontally */
+        gap: 10px; /* Reduce gap for mobile */
+    }
+    .profile-section {
+        width: 100%;
+        text-align: center;
+        align-items: center;
+        gap: 5px;
+    }
+    .profile-image {
+        width: 150px; /* Smaller on mobile */
+        height: 150px; /* Smaller on mobile */
+    }
+    .profile-name {
+        font-size: 16px; /* Slightly smaller font */
+        padding: 6px 12px; /* Smaller padding */
+    }
+    .about-text {
+        width: 100%; /* Full width */
+        text-align: center; /* Left-align text */
+    }
+    .about-text h1 {
+        font-size: 36px; /* Smaller heading */
+        margin-bottom: 20px;
+    }
+    .about-text p {
+        padding: 15px; /* Smaller padding */
+        font-size: 14px; /* Slightly smaller font */
+        line-height: 1.6; /* Maintain readable line height */
+        text-align: left;
+    }
+
 }
 
 /* ===== Projects Window ===== */
