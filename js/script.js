@@ -77,7 +77,7 @@ function closeWindow(windowEl, taskbarBtn) {
 // ===== Event Listeners =====
 
 // Intro
-closeBtn?.addEventListener('click', () => closeWindow(introWindow, taskbarIntro));
+closeBtn?.addEventListener('click', () => minimizeWindow(introWindow, taskbarIntro));
 minimizeBtn?.addEventListener('click', () => minimizeWindow(introWindow, taskbarIntro));
 taskbarIntro?.addEventListener('click', () => {
     introWindow.classList.contains('active') ? minimizeWindow(introWindow, taskbarIntro) : openWindow(introWindow, taskbarIntro);
