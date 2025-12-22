@@ -42,7 +42,7 @@ const keys = {};
 // Doors - CUSTOMIZE THESE URLS FOR YOUR PAGES
 const doors = [
     { 
-        x: 100, 
+        x: 120, 
         y: groundY - 80, 
         width: 60, 
         height: 80, 
@@ -50,7 +50,7 @@ const doors = [
         url: './projects.html',
     },
     { 
-        x: 200, 
+        x: 240, 
         y: groundY - 80, 
         width: 60, 
         height: 80, 
@@ -58,7 +58,7 @@ const doors = [
         url: './about.html',
     },
     { 
-        x: 300, 
+        x: 360, 
         y: groundY - 80, 
         width: 60, 
         height: 80, 
@@ -66,7 +66,7 @@ const doors = [
         url: './contact.html',
     },
     { 
-        x: 400, 
+        x: 480, 
         y: groundY - 80, 
         width: 60, 
         height: 80, 
@@ -74,7 +74,7 @@ const doors = [
         url: './resume.html',
     },
     {
-        x: 500, 
+        x: 600, 
         y: groundY - 80, 
         width: 60, 
         height: 80, 

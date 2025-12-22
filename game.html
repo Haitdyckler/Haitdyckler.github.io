@@ -205,10 +205,8 @@
         const selectedCharacterSprite = localStorage.getItem('selectedCharacter');
         
         function detectSpriteFormat() {
-            // Check if it's a custom sprite (18 frames: 8 idle + 10 walking)
             const customSpriteData = localStorage.getItem('customSpriteData');
             if (customSpriteData && selectedCharacterSprite === 'custom') {
-                // Custom sprites have 8 idle (0-7) + 10 walking (8-17)
                 spriteConfig = {
                     idleStart: 0,
                     idleEnd: 7,
@@ -216,7 +214,6 @@
                     walkEnd: 17
                 };
             } else {
-                // Built-in sprites have 4 idle (0-3) + 8 walking (4-11)
                 spriteConfig = {
                     idleStart: 0,
                     idleEnd: 3,
@@ -354,7 +351,6 @@
                 player.animationTimer = 0;
                 
                 if (player.jumping) {
-                    // Cycle through idle frames when jumping
                     if (player.currentFrame < spriteConfig.idleStart || player.currentFrame > spriteConfig.idleEnd) {
                         player.currentFrame = spriteConfig.idleStart;
                     }
@@ -363,7 +359,6 @@
                         player.currentFrame = spriteConfig.idleStart;
                     }
                 } else {
-                    // Running animation when on ground
                     if (player.currentFrame < spriteConfig.walkStart || player.currentFrame > spriteConfig.walkEnd) {
                         player.currentFrame = spriteConfig.walkStart;
                     }
@@ -398,8 +393,8 @@
             if (obstacleTimer > obstacleInterval) {
                 obstacleTimer = 0;
                 const height = Math.random() > 0.5 ? 40 : 60;
-                const type = Math.random() > 0.3 ? 'cactus' : 'bird';
-                const y = type === 'bird' ? groundY - 80 : groundY - height;
+                const type = 'cactus'; // Only cactus obstacles
+                const y = groundY - height;
                 
                 obstacles.push({
                     x: canvas.width,
@@ -421,7 +416,7 @@
                 // Remove off-screen obstacles
                 if (obstacle.x + obstacle.width < 0) {
                     obstacles.splice(index, 1);
-                    score += 10;
+                    score += 1;
                     if (score > highScore) {
                         highScore = score;
                         localStorage.setItem('dinoHighScore', highScore);
@@ -430,7 +425,7 @@
                     highScoreDisplay.textContent = highScore;
 
                     // Increase speed
-                    if (score % 100 === 0) {
+                    if (score % 10 === 0) {
                         gameSpeed += 0.5;
                     }
                 }
@@ -458,25 +453,19 @@
 
         function drawObstacles() {
             obstacles.forEach(obstacle => {
-                if (obstacle.type === 'cactus') {
-                    ctx.fillStyle = '#0f3460';
-                    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-                    
-                    // Add spikes
-                    ctx.fillStyle = '#e94560';
-                    for (let i = 0; i < 3; i++) {
-                        ctx.fillRect(
-                            obstacle.x + 5 + i * 8,
-                            obstacle.y - 5,
-                            5,
-                            10
-                        );
-                    }
-                } else {
-                    // Bird
-                    ctx.fillStyle = '#e94560';
-                    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, 20);
-                    ctx.fillRect(obstacle.x + 5, obstacle.y + 5, 20, 10);
+                // Only draw cactus
+                ctx.fillStyle = '#0f3460';
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                
+                // Add spikes
+                ctx.fillStyle = '#e94560';
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(
+                        obstacle.x + 5 + i * 8,
+                        obstacle.y - 5,
+                        5,
+                        10
+                    );
                 }
             });
         }
