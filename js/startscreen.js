@@ -6,6 +6,7 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const doorPrompt = document.getElementById('doorPrompt');
 const loading = document.getElementById('loading');
+const BackButton = document.getElementById('Back-Button');
 
 let spriteSheet = null;
 let groundImage = null;
@@ -293,6 +294,9 @@ function drawBackground() {
         ctx.fillRect(x, y, size, size);
     }
 }
+document.getElementById('Back-Button')?.addEventListener('click', () => {
+    window.location.href = 'character-select.html';
+});
 
 function gameLoop() {
     if (!gameStarted) return;
