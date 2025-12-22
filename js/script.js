@@ -27,6 +27,13 @@ const contactsCloseBtn = document.getElementById('contactsCloseBtn');
 const contactsMinimizeBtn = document.getElementById('contactsMinimizeBtn');
 const contactsTitleBar = document.getElementById('contactsTitleBar');
 
+const bgColorPicker = document.getElementById('bgColorPicker');
+const applyBgBtn = document.getElementById('applyBg');
+
+const startButton = document.querySelector('.start-button');
+const startMenu = document.getElementById('startMenu');
+const desktop = document.querySelector('.desktop');
+
 let i = 0;
 
 // ===== Typing Animation =====
@@ -155,7 +162,37 @@ function makeWindowDraggable(windowEl, titleBarEl) {
         isDragging = false;
     });
 }
+applyBgBtn.addEventListener('click', () => {
+    desktop.style.backgroundColor = bgColorPicker.value;
+    // Optional: save to localStorage
+    localStorage.setItem('desktopBg', bgColorPicker.value);
+    startMenu.style.display = 'none'; // auto-close after apply
+});
+window.addEventListener('load', () => {
+    const savedBg = localStorage.getItem('desktopBg');
+    if (savedBg) {
+        desktop.style.backgroundColor = savedBg;
+        bgColorPicker.value = savedBg; // sync picker UI
+    }
+});
+startButton?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (startMenu.style.display === 'block') {
+        startMenu.style.display = 'none';
+    } else {
+        startMenu.style.display = 'block';
+    }
+});
 
+// Close Start Menu when clicking anywhere else
+document.addEventListener('click', () => {
+    startMenu.style.display = 'none';
+});
+
+// Prevent closing when clicking inside the menu
+startMenu?.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
 // Initialize all draggable windows
 makeWindowDraggable(introWindow, titleBar);
 makeWindowDraggable(aboutWindow, aboutTitleBar);
