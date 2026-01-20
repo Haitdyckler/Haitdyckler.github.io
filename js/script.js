@@ -34,6 +34,12 @@ const startButton = document.querySelector('.start-button');
 const startMenu = document.getElementById('startMenu');
 const desktop = document.querySelector('.desktop');
 
+const skillsWindow = document.getElementById('skillsWindow');
+const skillsTitleBar = document.getElementById('skillsTitleBar');
+const skillsCloseBtn = document.getElementById('skillsCloseBtn');
+const skillsMinimizeBtn = document.getElementById('skillsMinimizeBtn');
+const taskbarSkills = document.getElementById('taskbarSkills');
+
 let i = 0;
 
 // ===== Typing Animation =====
@@ -198,3 +204,18 @@ makeWindowDraggable(introWindow, titleBar);
 makeWindowDraggable(aboutWindow, aboutTitleBar);
 makeWindowDraggable(projectsWindow, projectsTitleBar);
 makeWindowDraggable(contactsWindow, contactsTitleBar);
+
+//skills window
+skillsCloseBtn?.addEventListener('click', () => closeWindow(skillsWindow, taskbarSkills));
+skillsMinimizeBtn?.addEventListener('click', () => minimizeWindow(skillsWindow, taskbarSkills));
+taskbarSkills?.addEventListener('click', () => {
+    skillsWindow.classList.contains('active') 
+        ? minimizeWindow(skillsWindow, taskbarSkills) 
+        : openWindow(skillsWindow, taskbarSkills);
+});
+document.getElementById('SkillsIcon')?.addEventListener('click', () => {
+    openWindow(skillsWindow, taskbarSkills);
+});
+
+// Make Skills window draggable
+makeWindowDraggable(skillsWindow, skillsTitleBar);

@@ -744,3 +744,230 @@ body {
     background: #000080;
     color: white;
 }
+.browser-toolbar {
+    background: #c0c0c0;
+    padding: 4px;
+    border-bottom: 1px solid #808080;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toolbar-buttons {
+    display: flex;
+    gap: 2px;
+}
+
+.toolbar-btn {
+    width: 24px;
+    height: 22px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toolbar-btn:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+.address-bar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: white;
+    padding: 2px;
+    border: 1px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.address-label {
+    font-size: 11px;
+    padding: 0 4px;
+    color: #000;
+}
+
+.address-input {
+    flex: 1;
+    border: 1px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    padding: 2px 4px;
+    font-size: 11px;
+    font-family: 'MS Sans Serif', sans-serif;
+    background: white;
+}
+
+.go-btn {
+    padding: 2px 8px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.go-btn:active {
+    border-color: #000000 #ffffff #ffffff #000000;
+}
+
+/* Skills Window Specific */
+#skillsWindow {
+    width: 850px;
+    height: 85vh;
+    display: none;
+    flex-direction: column;
+}
+
+#skillsWindow.active {
+    display: flex;
+}
+
+.skills-content {
+    flex: 1;
+    background: #394A50;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.skills-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.skills-header h1 {
+    font-size: 32px;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.skills-subtitle {
+    color: #cccccc;
+    font-size: 14px;
+}
+
+.skills-container {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.skill-category {
+    background: #A8B5B2;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+}
+
+.category-header {
+    color: #000;
+    padding: 6px 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.category-header h2 {
+    font-size: 14px;
+    margin: 0;
+}
+
+.skill-grid {
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.skill-item {
+    background: white;
+    padding: 12px;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.skill-icon {
+    width: 40px;
+    height: 40px;
+    background: #000080;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    flex-shrink: 0;
+}
+
+.skill-info {
+    flex: 1;
+}
+
+.skill-name {
+    font-size: 13px;
+    font-weight: bold;
+    color: #000;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.skill-bar {
+    height: 16px;
+    background: #000;
+    border: 1px solid;
+    border-color: #808080 #ffffff #959494 #808080;
+    padding: 2px;
+}
+
+.skill-progress {
+    height: 100%;
+    background: linear-gradient(to bottom, #468232, #1AB608);
+    transition: width 0.3s ease;
+}
+
+/* Responsive Skills Window */
+@media (max-width: 768px) {
+    #skillsWindow {
+        width: 95%;
+        height: 90vh;
+    }
+
+    .skills-content {
+        padding: 15px;
+    }
+
+    .skill-grid {
+        grid-template-columns: 1fr;
+        padding: 10px;
+    }
+
+    .skills-header h1 {
+        font-size: 24px;
+    }
+
+    .browser-toolbar {
+        padding: 2px;
+    }
+
+    .toolbar-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+
+    .address-bar {
+        flex-wrap: wrap;
+    }
+
+    .address-input {
+        font-size: 10px;
+    }
+}
