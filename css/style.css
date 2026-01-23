@@ -5,7 +5,7 @@
 }
 
 body {
-    font-family: 'MS Sans Serif', 'Microsoft Sans Serif', sans-serif;
+    font-family: Consolas, 'Courier New', monospace;
     overflow: hidden;
     width: 100vw;
     height: 100vh;
@@ -835,102 +835,110 @@ body {
 
 .skills-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .skills-header h1 {
     font-size: 32px;
     color: #ffffff;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .skills-subtitle {
-    color: #cccccc;
+    color: #b0b0b0;
     font-size: 14px;
 }
 
-.skills-container {
+.skills-section {
+    margin-bottom: 20px;
+}
+
+.skill-category-box {
+    background: #A8B5B2;
+    border-top: 2px solid #ffffff;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.skill-category-box.creative {
+    background: #3C5E8B;
+    border-top: 2px solid #ffffff;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.skill-grid-new {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.skill-column {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 12px;
 }
 
-.skill-category {
-    background: #A8B5B2;
-    border: 2px solid;
-    border-color: #ffffff #000000 #000000 #ffffff;
-}
-
-.category-header {
-    color: #000;
-    padding: 6px 10px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.category-header h2 {
+.column-title {
     font-size: 14px;
-    margin: 0;
-}
-
-.skill-grid {
-    padding: 15px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 12px;
-}
-
-.skill-item {
-    background: white;
-    padding: 12px;
-    border: 2px solid;
-    border-color: #808080 #ffffff #ffffff #808080;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.skill-icon {
-    width: 40px;
-    height: 40px;
-    background: #000080;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     font-weight: bold;
-    font-size: 12px;
-    border: 2px solid;
-    border-color: #ffffff #000000 #000000 #ffffff;
-    flex-shrink: 0;
+    color: #ffffff;
+    margin-bottom: 5px;
+    text-align: left;
 }
 
-.skill-info {
-    flex: 1;
+.skill-card {
+    background: rgba(220, 220, 210, 0.95);
+    border: 1px solid #999;
+    border-radius: 6px;
+    padding: 12px 15px;
+    transition: transform 0.2s ease;
 }
 
-.skill-name {
-    font-size: 13px;
+.skill-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.skill-card.creative-card {
+    background: rgba(240, 240, 240, 0.95);
+}
+
+.skill-card-name {
+    font-size: 14px;
     font-weight: bold;
     color: #000;
-    display: block;
     margin-bottom: 6px;
 }
 
-.skill-bar {
-    height: 16px;
-    background: #000;
-    border: 1px solid;
-    border-color: #808080 #ffffff #959494 #808080;
-    padding: 2px;
+.skill-card-level {
+    font-size: 11px;
+    color: #000;
 }
 
-.skill-progress {
-    height: 100%;
-    background: linear-gradient(to bottom, #468232, #1AB608);
-    transition: width 0.3s ease;
+.skill-card-level.advanced::after {
+    content: ' Advanced';
+    color: #2d7a2d;
+    font-weight: 600;
+}
+
+.skill-card-level.intermediate::after {
+    content: ' Intermediate';
+    color: #c48f2b;
+    font-weight: 600;
+}
+
+.skill-card-level.familiar::after {
+    content: ' Familiar';
+    color: #555;
+    font-weight: 600;
+}
+
+.skill-grid-creative {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
 }
 
 /* Responsive Skills Window */
@@ -944,9 +952,12 @@ body {
         padding: 15px;
     }
 
-    .skill-grid {
+    .skill-grid-new {
         grid-template-columns: 1fr;
-        padding: 10px;
+    }
+
+    .skill-grid-creative {
+        grid-template-columns: 1fr;
     }
 
     .skills-header h1 {
@@ -969,5 +980,9 @@ body {
 
     .address-input {
         font-size: 10px;
+    }
+
+    .skill-category-box {
+        padding: 15px;
     }
 }
