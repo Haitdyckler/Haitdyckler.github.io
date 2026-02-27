@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASCII Globe - Real Earth Map</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000000;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            color: #00ff00;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        #globe {
+            font-size: 4px;
+            line-height: 4px;
+            letter-spacing: 0px;
+            white-space: pre;
+            text-shadow: 0 0 2px rgba(0, 255, 0, 0.3);
+        }
+
+        .controls {
+            margin-top: 30px;
+            font-size: 12px;
+        }
+
+        .controls button {
+            background: #001a00;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .controls button:hover {
+            background: #00ff00;
+            color: #000000;
+        }
+
+        .info {
+            margin-top: 15px;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="globe"></div>
+        <div class="controls">
+            <button onclick="changeSpeed(-1)">Slower</button>
+            <button onclick="changeSpeed(0)">Stop</button>
+            <button onclick="changeSpeed(1)">Faster</button>
+            <button onclick="toggleRotation()">Toggle Auto-Rotate</button>
+        </div>
+        <div class="info">
+            Mouse: Click & Drag to rotate | Scroll to zoom
+        </div>
+    </div>
+
+    <script>
+        const earthTextureRaw = [
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%#++--..:-=*#**#+=..     :=%%##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@%##:#%+*#=+-+:.  =#:                   -@@@@@@@@@@@#- =-+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%*+=-#@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@#---*%%-#*:= :--==.%@@@@@@@            :=@@@@@@@@@@@@@@@@@@@@@@@@@@%.#@@@@#@%@#+==--=--=++=**#%+#@@@@%#@@@@@@@@@@@@@@",
+            "#%@@@%*==++++++******+=+*+++*+**+++*#=#*+=-.#@@@@#          *@@@@@@@@@@@@@@@#*+**#*#%%@%%#%##*+**+#*+++*+*+++++++++++***++*+=++******++++==+",
+            "@@#%@#*****+++*****++*###***++***++#**#%##+==@@@@@    #@@@@@@#+=%@@@@@@@@%#*#%%#####%########**#*####**#******************+++++++++++++++++*",
+            "@@@@@@%**+##@@%#.:**####*#*#*****%@@@@@%*++%*#@@@@@@@@@@@@@@@@@@@@@@%@@@*#%##@@######*##****###################*##***********%%%%#@@*%@@@@@@",
+            "@@@@@@%@@@@@@@@@@@@*#%##****##########@#*##*#*#%@@@@@@@@@@@@@@@@@@%*#*@@@*#%%#+**+**++*+++++*++++++=+++***##**#*#*********#%@@@@@@#*#@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@%####*:.:==+*#####**###%%%%%%@@@@@@@@@@@@@@@@@@@##+=++**+*++++++++==-----:.::---:-++=:.==+++*+--=*++****%%@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@*==+=-:--=++**###****##%@@@@@@@@@@@@@@@@@@@@@@@#++**+#++++=#%##+=:+*          :-:            .=:=**+#@@%@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@*.. -:+:-=+++++++**%@@@@@@@@@@@@@@@@@@@@@@@@%=:-%@@*@%+#+#++-:====-*+     .:-.             .:++***@@@@#@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@%-  . :::-=++++**+%@@@@@@@@@@@@@@@@@@@@@@@@@@#*+.   #@@@@%@%%%      .      -=.        .-::==+=*@@*%%%##@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@%-.:   -=**#**#@@@@@@@@@@@@@@@@@@@@@@@@@@@.          :   ..               .==. ..--=+*++*+=+++@@%@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@%+*+  .#@@@@@*#@@@@@@@@@@@@@@@@@@@@@@@@                   +      %+.       .:.:-+=+++++*+**#@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+-=%@@#@%%*%%%@@@@@@@@@@@@@@@@@@@@                     +        %@@@-.:::.-+#=-===++#@@@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%#****%@@@@@@@@@@@@@@@@@@@@@@@@@@+                     #-    *@@@@@@*. =%@@@#===-*@@@@%#@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@**@@@#*%@@@@@@@@@@@@@@@@@@@*===-:.:.   ..-:  ::==-:%%*@@@@@@@@@+:%@@@@@@+%+=#@@@@%#@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%+++=++*%@@@@@@@@@@@@@@@@@*+===----+++****+++==   *@@@@@@@@@@@*@@@@@@%%@@@@@%@%*@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#++**#*+***#@@@@@@@@@@@@@@@@@@@@@@%++#**##*+-..:-%@@@@@@@@@@@@@@@@@@@**%@@###@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#+**######*****#%@@@@@@@@@@@@@@@@@@%*+*####+*=--@@@@@@@@@@@@@@@@@@@@@@@#*#%**%%%@@%%%#%@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%+#########*++++=-#@@@@@@@@@@@@@@@@@@+*+*++#+=+%@@@@@@@@@@@@@@@@@@@@@@@@@##*@@@@@@@@%%*+*%@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@=###******+=+==#@@@@@@@@@@@@@@@@@@@*+*****+*+*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%*#@@#@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+:-***++====++@@@@@@@@@@@@@@@@@@@+---===+=+*#@*=%@@@@@@@@@@@@@@@@@@@@@@@@@@@%=:--=+*=*@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@* :++++==+=+%@@@@@@@@@@@@@@@@@@@@::...--=*@@@=*@@@@@@@@@@@@@@@@@@@@@@@@@%=:...:::...-=%@@@@@%@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*.=+*+++*@@@@@@@@@@@@@@@@@@@@@@@@*   :--+@@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@-.------.   -==#@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@=:====++%@@@@@@@@@@@@@@@@@@@@@@@@@%:.:-+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@-==--=-.  .--+%@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@:-==++%@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@#==-+%@@@@@@@@%@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#=-=+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+--#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@**@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@% :+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#-=%@@@@@@@@@@#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%**%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%++  :@@@@@@@@@@@@@@@@@@@@@@@@@@@@%@@@@@#*+@#           =#%-                            -+#@@@@@@@@",
+            "@@@@@@@@@@@@@@@@@@@@#**#%%@@@%       *+.      :@@@@@@@@@@@@@@%                                :+=                                      -@@@@",
+            "==+***=-                                  ....::---+===++.                                                                          .--   .-",
+            "          ........                    ..... ..:::   .:-:..                                                                          ....    ",
+            "                                                                                                                                            "
+        ];
+
+        // Convert ASCII art to binary texture (@ and # are land)
+        const earthTexture = earthTextureRaw.map(row => {
+            return row.split('').map(char => {
+                return (char === '@' || char === '#') ? '1' : '0';
+            }).join('');
+        });
+
+        const width = 240;
+        const height = 120;
+        const radius = 60;
+        const aspectRatio = 2.0;
+        
+        let rotation = 0;
+        let rotationSpeed = 0.02;
+        let autoRotate = true;
+        let mouseDown = false;
+        let lastMouseX = 0;
+        let verticalRotation = 0;
+        let zoom = 1;
+
+        const globeElement = document.getElementById('globe');
+        const chars = ['.', ':', '-', '=', '+', '*', '#', '%', '@'];
+
+        function getTextureValue(u, v) {
+            const textureHeight = earthTexture.length;
+            const textureWidth = earthTexture[0].length;
+            
+            u = ((u % 1) + 1) % 1;
+            v = Math.max(0, Math.min(0.999, v));
+            
+            const x = Math.floor(u * textureWidth);
+            const y = Math.floor(v * textureHeight);
+            
+            return earthTexture[y] && earthTexture[y][x] === '1';
+        }
+
+        function renderGlobe() {
+            let output = '';
+            
+            for (let j = 0; j < height; j++) {
+                for (let i = 0; i < width; i++) {
+                    const x = (i - width / 2) / (radius * zoom);
+                    const y = -(j - height / 2) / (radius * zoom) * aspectRatio;
+                    
+                    const distSquared = x * x + y * y;
+                    
+                    if (distSquared <= 1) {
+                        const z = Math.sqrt(1 - distSquared);
+                        
+                        const rotY = Math.cos(verticalRotation) * y - Math.sin(verticalRotation) * z;
+                        const rotZ = Math.sin(verticalRotation) * y + Math.cos(verticalRotation) * z;
+                        
+                        const theta = Math.atan2(x, rotZ) + rotation;
+                        const phi = Math.acos(Math.max(-1, Math.min(1, rotY)));
+                        
+                        const u = (theta / (2 * Math.PI) + 0.5) % 1;
+                        const v = phi / Math.PI;
+                        
+                        const isLand = getTextureValue(u, v);
+                        const luminance = Math.max(0, rotZ);
+                        
+                        const edgeFactor = 1 - Math.sqrt(distSquared);
+                        const adjustedLuminance = luminance * (0.3 + 0.7 * edgeFactor);
+                        
+                        let charIndex;
+                        if (isLand) {
+                            charIndex = Math.floor(adjustedLuminance * (chars.length - 1));
+                            charIndex = Math.max(3, Math.min(chars.length - 1, charIndex));
+                        } else {
+                            charIndex = Math.floor(adjustedLuminance * (chars.length - 1));
+                            charIndex = Math.max(0, Math.min(4, charIndex));
+                        }
+                        
+                        output += chars[charIndex];
+                    } else if (distSquared <= 1.05) {
+                        output += '.';
+                    } else {
+                        output += ' ';
+                    }
+                }
+                output += '\n';
+            }
+            
+            globeElement.textContent = output;
+        }
+
+        function animate() {
+            if (autoRotate) {
+                rotation += rotationSpeed;
+            }
+            renderGlobe();
+            requestAnimationFrame(animate);
+        }
+
+        function changeSpeed(delta) {
+            if (delta === 0) {
+                autoRotate = false;
+            } else {
+                autoRotate = true;
+                rotationSpeed = Math.max(0.001, Math.min(0.1, rotationSpeed + delta * 0.01));
+            }
+        }
+
+        function toggleRotation() {
+            autoRotate = !autoRotate;
+        }
+
+        document.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            lastMouseX = e.clientX;
+        });
+
+        document.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (mouseDown) {
+                const deltaX = e.clientX - lastMouseX;
+                rotation += deltaX * 0.01;
+                lastMouseX = e.clientX;
+            }
+        });
+
+        document.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoom *= (1 - e.deltaY * 0.001);
+            zoom = Math.max(0.5, Math.min(2, zoom));
+        }, { passive: false });
+
+        animate();
+    </script>
+</body>
+</html>
