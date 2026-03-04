@@ -3,75 +3,268 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Globe - Real Earth Map</title>
+    <title>Terminal Hub</title>
     <style>
-        body {
+        * {
             margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #000000;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
             font-family: 'Courier New', monospace;
-            overflow: hidden;
             color: #00ff00;
+            display: flex;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
         }
 
-        .container {
-            text-align: center;
+        .terminal-container {
+            flex: 1;
+            border: 2px solid #00ff00;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
 
-        #globe {
-            font-size: 4px;
-            line-height: 4px;
-            letter-spacing: 0px;
-            white-space: pre;
-            text-shadow: 0 0 2px rgba(0, 255, 0, 0.3);
-        }
-
-        .controls {
-            margin-top: 30px;
+        .terminal-header {
+            background: #001a00;
+            padding: 8px 12px;
+            border-bottom: 1px solid #00ff00;
             font-size: 12px;
         }
 
-        .controls button {
-            background: #001a00;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 8px 16px;
-            margin: 0 5px;
-            cursor: pointer;
+        .terminal-output {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .terminal-input-line {
+            display: flex;
+            padding: 10px 15px;
+            border-top: 1px solid #00ff00;
+            background: #000;
+        }
+
+        .prompt {
+            color: #ffffff;
+            margin-right: 8px;
+        }
+
+        #terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
             font-family: 'Courier New', monospace;
-            transition: all 0.3s;
+            font-size: 14px;
+            outline: none;
         }
 
-        .controls button:hover {
-            background: #00ff00;
-            color: #000000;
+        .sidebar {
+            width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .info {
-            margin-top: 15px;
-            font-size: 11px;
+        .info-box {
+            border: 2px solid #00ff00;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-header {
+            background: #001a00;
+            padding: 8px 12px;
+            border-bottom: 1px solid #00ff00;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .info-content {
+            padding: 15px;
+            text-align: center;
+            font-size: 14px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .globe-box {
+            height: 150px;
+        }
+
+        .time-box {
+            height: 80px;
+        }
+
+        .score-box {
+            flex: 1;
+        }
+
+        #globe-container {
+            font-size: 2px;
+            line-height: 2px;
+            letter-spacing: 0px;
+            white-space: pre;
+            text-shadow: 0 0 2px rgba(0, 255, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .output-line {
+            margin-bottom: 4px;
+            color: #ffffff;
+        }
+
+        .error {
+            color: #ff4444;
+        }
+
+        .success {
+            color: #00ff00;
+        }
+
+        .warning {
+            color: #ffaa00;
+        }
+
+        .typing-text {
+            background: #001a00;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ffffff;
+            border-radius: 4px;
+        }
+
+        .typing-input {
+            background: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .correct {
+            color: #00ff00;
+        }
+
+        .incorrect {
+            color: #ff4444;
+            background: #330000;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat-item {
+            background: #001a00;
+            padding: 8px;
+            border: 1px solid #00ff00;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 10px;
             opacity: 0.7;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .cursor {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #00ff00;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="globe"></div>
-        <div class="controls">
-            <button onclick="changeSpeed(-1)">Slower</button>
-            <button onclick="changeSpeed(0)">Stop</button>
-            <button onclick="changeSpeed(1)">Faster</button>
-            <button onclick="toggleRotation()">Toggle Auto-Rotate</button>
+    <div class="terminal-container">
+        <div class="terminal-header">&lt;user&gt;</div>
+        <div class="terminal-output" id="output"></div>
+        <div class="terminal-input-line">
+            <span class="prompt">$</span>
+            <input type="text" id="terminal-input" autofocus>
         </div>
-        <div class="info">
-            Mouse: Click & Drag to rotate | Scroll to zoom
+    </div>
+
+    <div class="sidebar">
+        <div class="info-box globe-box">
+            <div class="info-content">
+                <div id="globe-container"></div>
+            </div>
+        </div>
+
+        <div class="info-box time-box">
+            <div class="info-header">Time</div>
+            <div class="info-content">
+                <div id="time-display">--:--:--</div>
+            </div>
+        </div>
+
+        <div class="info-box score-box">
+            <div class="info-header">Score</div>
+            <div class="info-content">
+                <div id="wpm-display">0 WPM</div>
+                <div id="accuracy-display" style="margin-top: 10px; font-size: 12px;">0% accuracy</div>
+            </div>
         </div>
     </div>
 
     <script>
+        // Terminal State
+        let commandHistory = [];
+        let historyIndex = -1;
+        let gameActive = false;
+        let gameStartTime = null;
+        let gameText = '';
+        let currentInput = '';
+        let correctChars = 0;
+        let totalChars = 0;
+        let gameInterval = null;
+
+        const sampleTexts = [
+            "The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.",
+            "How vexingly quick daft zebras jump! The five boxing wizards jump quickly.",
+            "Sphinx of black quartz, judge my vow. The quick brown fox jumps over a lazy dog.",
+            "Amazingly few discotheques provide jukeboxes. Quick zephyrs blow, vexing daft Jim.",
+            "Waltz, bad nymph, for quick jigs vex. Glib jocks quiz nymph to vex dwarf."
+        ];
+
         const earthTextureRaw = [
             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
             "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%#++--..:-=*#**#+=..     :=%%##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",
@@ -120,20 +313,17 @@
             }).join('');
         });
 
-        const width = 240;
-        const height = 120;
-        const radius = 60;
+        const globeWidth = 120;
+        const globeHeight = 60;
+        const globeRadius = 30;
         const aspectRatio = 2;
         
         let rotation = 0;
         let rotationSpeed = 0.02;
         let autoRotate = true;
-        let mouseDown = false;
-        let lastMouseX = 0;
         let verticalRotation = 0;
         let zoom = 1;
 
-        const globeElement = document.getElementById('globe');
         const chars = ['.', ':', '-', '=', '+', '*', '#', '%', '@'];
 
         function getTextureValue(u, v) {
@@ -152,10 +342,10 @@
         function renderGlobe() {
             let output = '';
             
-            for (let j = 0; j < height; j++) {
-                for (let i = 0; i < width; i++) {
-                    const x = (i - width / 2) / (radius * zoom);
-                    const y = -(j - height / 2) / (radius * zoom) * aspectRatio;
+            for (let j = 0; j < globeHeight; j++) {
+                for (let i = 0; i < globeWidth; i++) {
+                    const x = (i - globeWidth / 2) / (globeRadius * zoom);
+                    const y = -(j - globeHeight / 2) / (globeRadius * zoom) * aspectRatio;
                     
                     const distSquared = x * x + y * y;
                     
@@ -196,54 +386,268 @@
                 output += '\n';
             }
             
-            globeElement.textContent = output;
-        }
-
-        function animate() {
+            document.getElementById('globe-container').textContent = output;
+            
             if (autoRotate) {
                 rotation += rotationSpeed;
             }
-            renderGlobe();
-            requestAnimationFrame(animate);
         }
 
-        function changeSpeed(delta) {
-            if (delta === 0) {
-                autoRotate = false;
+        setInterval(renderGlobe, 50);
+
+        function updateTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('time-display').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        // Terminal functions
+        const output = document.getElementById('output');
+        const input = document.getElementById('terminal-input');
+
+        function print(text, className = '') {
+            const line = document.createElement('div');
+            line.className = 'output-line ' + className;
+            line.textContent = text;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function printHTML(html) {
+            const line = document.createElement('div');
+            line.className = 'output-line';
+            line.innerHTML = html;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clear() {
+            output.innerHTML = '';
+        }
+
+        function startTypingTest() {
+            gameActive = true;
+            gameText = sampleTexts[Math.floor(Math.random() * sampleTexts.length)];
+            currentInput = '';
+            correctChars = 0;
+            totalChars = 0;
+            gameStartTime = Date.now();
+
+            clear();
+            print('=== TYPING SPEED TEST ===', 'success');
+            print('');
+            print('Type the following text as fast and accurately as possible:');
+            print('');
+            
+            const textContainer = document.createElement('div');
+            textContainer.className = 'typing-text';
+            textContainer.id = 'typing-display';
+            textContainer.textContent = gameText;
+            output.appendChild(textContainer);
+
+            const inputContainer = document.createElement('div');
+            inputContainer.innerHTML = '<input type="text" id="typing-input" class="typing-input" autofocus placeholder="Start typing...">';
+            output.appendChild(inputContainer);
+
+            const statsContainer = document.createElement('div');
+            statsContainer.className = 'stats';
+            statsContainer.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-label">WPM</div>
+                    <div class="stat-value" id="live-wpm">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Accuracy</div>
+                    <div class="stat-value" id="live-accuracy">100%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Time</div>
+                    <div class="stat-value" id="live-time">0s</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Characters</div>
+                    <div class="stat-value" id="live-chars">0/${gameText.length}</div>
+                </div>
+            `;
+            output.appendChild(statsContainer);
+
+            const typingInput = document.getElementById('typing-input');
+            typingInput.focus();
+
+            gameInterval = setInterval(updateGameStats, 100);
+
+            typingInput.addEventListener('input', handleTypingInput);
+            typingInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    endGame();
+                }
+            });
+
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function handleTypingInput(e) {
+            const typingInput = e.target;
+            currentInput = typingInput.value;
+            totalChars = currentInput.length;
+
+            let displayHTML = '';
+            correctChars = 0;
+
+            for (let i = 0; i < gameText.length; i++) {
+                if (i < currentInput.length) {
+                    if (currentInput[i] === gameText[i]) {
+                        displayHTML += `<span class="correct">${gameText[i]}</span>`;
+                        correctChars++;
+                    } else {
+                        displayHTML += `<span class="incorrect">${gameText[i]}</span>`;
+                    }
+                } else if (i === currentInput.length) {
+                    displayHTML += `<span class="cursor">${gameText[i]}</span>`;
+                } else {
+                    displayHTML += gameText[i];
+                }
+            }
+
+            document.getElementById('typing-display').innerHTML = displayHTML;
+
+            if (currentInput === gameText) {
+                endGame();
+            }
+        }
+
+        function updateGameStats() {
+            if (!gameActive) return;
+
+            const elapsed = (Date.now() - gameStartTime) / 1000;
+            const minutes = elapsed / 60;
+            const wpm = Math.round((correctChars / 5) / minutes) || 0;
+            const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
+
+            document.getElementById('live-wpm').textContent = wpm;
+            document.getElementById('live-accuracy').textContent = accuracy + '%';
+            document.getElementById('live-time').textContent = Math.round(elapsed) + 's';
+            document.getElementById('live-chars').textContent = `${currentInput.length}/${gameText.length}`;
+
+            document.getElementById('wpm-display').textContent = wpm + ' WPM';
+            document.getElementById('accuracy-display').textContent = accuracy + '% accuracy';
+        }
+
+        function endGame() {
+            if (!gameActive) return;
+            
+            gameActive = false;
+            clearInterval(gameInterval);
+
+            const elapsed = (Date.now() - gameStartTime) / 1000;
+            const minutes = elapsed / 60;
+            const wpm = Math.round((correctChars / 5) / minutes) || 0;
+            const accuracy = totalChars > 0 ? Math.round((correctChars / totalChars) * 100) : 100;
+
+            const typingInput = document.getElementById('typing-input');
+            if (typingInput) {
+                typingInput.disabled = true;
+                typingInput.removeEventListener('input', handleTypingInput);
+            }
+
+            print('');
+            print('=== RESULTS ===', 'success');
+            print(`WPM: ${wpm}`, 'success');
+            print(`Accuracy: ${accuracy}%`, accuracy >= 90 ? 'success' : 'warning');
+            print(`Time: ${elapsed.toFixed(2)}s`);
+            print(`Correct characters: ${correctChars}/${totalChars}`);
+            print('');
+            print('Type "typetest" to play again!');
+            
+            input.focus();
+        }
+        const commands = {
+            help: () => {
+                print('Available commands:');
+                print('  typetest  - Start typing speed test game');
+                print('  help      - Show this help message');
+                print('  clear     - Clear the terminal');
+                print('  echo      - Print text to terminal');
+                print('  date      - Show current date and time');
+                print('  whoami    - Display current user');
+            },
+            typetest: () => {
+                startTypingTest();
+            },
+            clear: () => {
+                clear();
+            },
+            echo: (args) => {
+                print(args.join(' '));
+            },
+            date: () => {
+                print(new Date().toString());
+            },
+            whoami: () => {
+                print('<user>');
+            }
+        };
+
+        function executeCommand(cmdLine) {
+            const parts = cmdLine.trim().split(' ');
+            const cmd = parts[0].toLowerCase();
+            const args = parts.slice(1);
+
+            print('$ ' + cmdLine, 'success');
+
+            if (cmd === '') {
+                return;
+            }
+
+            if (commands[cmd]) {
+                commands[cmd](args);
             } else {
-                autoRotate = true;
-                rotationSpeed = Math.max(0.001, Math.min(0.1, rotationSpeed + delta * 0.01));
+                print(`bash: ${cmd}: command not found`, 'error');
             }
         }
 
-        function toggleRotation() {
-            autoRotate = !autoRotate;
-        }
+        // Input handling
+        input.addEventListener('keydown', (e) => {
+            if (gameActive) {
+                e.preventDefault();
+                return;
+            }
 
-        document.addEventListener('mousedown', (e) => {
-            mouseDown = true;
-            lastMouseX = e.clientX;
-        });
-
-        document.addEventListener('mouseup', () => {
-            mouseDown = false;
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (mouseDown) {
-                const deltaX = e.clientX - lastMouseX;
-                rotation += deltaX * 0.01;
-                lastMouseX = e.clientX;
+            if (e.key === 'Enter') {
+                const cmd = input.value;
+                if (cmd.trim()) {
+                    commandHistory.unshift(cmd);
+                    historyIndex = -1;
+                    executeCommand(cmd);
+                }
+                input.value = '';
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    input.value = commandHistory[historyIndex];
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    input.value = commandHistory[historyIndex];
+                } else {
+                    historyIndex = -1;
+                    input.value = '';
+                }
             }
         });
 
-        document.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            zoom *= (1 - e.deltaY * 0.001);
-            zoom = Math.max(0.5, Math.min(2, zoom));
-        }, { passive: false });
-
-        animate();
+        // Welcome message
+        print('Terminal Hub v1.0', 'success');
+        print('Type "help" for available commands');
+        print('');
     </script>
 </body>
 </html>
