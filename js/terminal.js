@@ -435,17 +435,28 @@ const commands = {
         if (/Safari\/([\d.]+)/.test(ua) && !/Chrome/.test(ua)) return 'Safari';
         return 'Unknown Browser';
         }
-        print('OS:       Oddyseus v1.0 64', 'success');
-        print('Host:     Haitdyckler.github.io', 'success');
-        print('');
-        print('--- Device Info ---');
-        print(`Device:   ${getDevice()}`);
-        print(`System:   ${getOS()}`);
-        print(`Browser:  ${getBrowser()}`);
-        print(`CPU:      ${navigator.hardwareConcurrency} logical cores`);
-        print(`RAM:      ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A'}`);
-        print(`Screen:   ${screen.width}x${screen.height} (${window.devicePixelRatio}x DPR)`);
-        print(`Language: ${navigator.language}`);
+        function printInfo(label, value) {
+        const div = document.createElement('div');
+        div.className = 'output-line';
+        div.style.whiteSpace = 'pre';
+        div.innerHTML = `<span style="color:#00ccff;font-weight:bold;">${label}:</span><span style="color:#ffffff;"> ${value}</span>`;
+        output.appendChild(div);
+        output.scrollTop = output.scrollHeight;
+        }
+        const header = document.createElement('div');
+        header.className = 'output-line';
+        header.innerHTML = `<span style="color:#00ccff;font-weight:bold;">${getDevice()}</span><span style="color:#ffffff;">@</span><span style="color:#00ccff;font-weight:bold;">Haitdyckler.github.io</span>`;
+        output.appendChild(header);
+        print('----------');
+        printInfo('OS      ', 'Oddyseus v1.0 64');
+        printInfo('Host    ', 'Haitdyckler.github.io');
+        printInfo('Device  ', getDevice());
+        printInfo('System  ', getOS());
+        printInfo('Browser ', getBrowser());
+        printInfo('CPU     ', `${navigator.hardwareConcurrency} logical cores`);
+        printInfo('RAM     ', navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A');
+        printInfo('Screen  ', `${screen.width}x${screen.height} (${window.devicePixelRatio}x DPR)`);
+        printInfo('Language', navigator.language);
         print('');
     }
 };
