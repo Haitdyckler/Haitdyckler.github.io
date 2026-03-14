@@ -7,6 +7,36 @@
     <link rel="stylesheet" href="css/terminal_style.css">
 </head>
 <body>
+    <!-- Boot Screen -->
+    <div id="boot-screen">
+        <div id="boot-content">
+            <div id="boot-logo">
+                <pre id="boot-ascii">
+    $$$$$$\ $$\ $$\                 $$\ 
+    \_$$  _|$$ |\__|                $$ |
+      $$ |  $$ |$$\  $$$$$$\   $$$$$$$ |
+      $$ |  $$ |$$ | \____$$\ $$  __$$ |
+      $$ |  $$ |$$ | $$$$$$$ |$$ /  $$ |
+      $$ |  $$ |$$ |$$  __$$ |$$ |  $$ |
+    $$$$$$\ $$ |$$ |\$$$$$$$ |\$$$$$$$ |
+    \______|\__|\__| \_______| \_______|
+                </pre>
+                <div id="boot-subtitle">TERMINAL HUB v1.0 — 64-BIT KERNEL</div>
+            </div>
+
+            <div id="boot-log"></div>
+
+            <div id="boot-bar-container">
+                <div id="boot-bar-label">LOADING SYSTEM</div>
+                <div id="boot-bar-track">
+                    <div id="boot-bar-fill"></div>
+                </div>
+                <div id="boot-bar-percent">0%</div>
+            </div>
+
+            <div id="boot-ready" style="display:none;">SYSTEM READY — PRESS ANY KEY</div>
+        </div>
+    </div>
     <div class="terminal-container">
         <div class="terminal-header">&lt;user&gt;</div>
         <div class="terminal-output" id="output"></div>

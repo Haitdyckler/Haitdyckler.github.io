@@ -687,9 +687,13 @@ body {
     border-color: #ffffff #000000 #000000 #ffffff;
 }
 .color-picker {
+    border-top: 2px solid rgb(173, 173, 173);
     padding: 6px 8px;
     display: flex;
+    align-items: center;
     justify-content: center;
+    flex-direction: column;
+    gap: 6px
 }
 
 .color-picker input[type="color"] {
@@ -701,6 +705,22 @@ body {
     background: #c0c0c0;
     /* Optional: make it look more pixelated/retro */
     image-rendering: pixelated;
+}
+.ok-btn {
+    width: 100px;
+    height: 26px;
+    padding: 0 16px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #000000 #000000 #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 1px;
+}
+.ok-btn:active {
+    border-color: #000000 #ffffff #ffffff #000000;
 }
 .start-menu {
     position: absolute;
@@ -738,6 +758,9 @@ body {
 #applyBg{
     border-top: 1px solid black;
     font-weight: bold;
+}
+#TerminalBtn{
+    border-top: 1px solid black;
 }
 
 .start-menu-item:hover {

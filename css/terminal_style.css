@@ -118,6 +118,13 @@ body {
     color: #ffffff;
 }
 
+.ascii-art {
+    font-family: monospace;
+    color: #eb239e;
+    white-space: pre;
+    line-height: 1;
+}
+
 .error {
     color: #ff4444;
 }
@@ -186,7 +193,109 @@ body {
 .cursor {
     animation: blink 1s infinite;
 }
+/* ── BOOT SCREEN ───────────────────────────── */
+#boot-screen {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', monospace;
+    color: #00ff00;
+    transition: opacity 0.8s ease;
+}
 
+#boot-screen.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#boot-content {
+    width: 680px;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+#boot-ascii {
+    font-size: 11px;
+    line-height: 1.2;
+    color: #00ff00;
+    text-shadow: 0 0 8px #00ff00;
+    white-space: pre;
+}
+
+#boot-subtitle {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #00aa00;
+    letter-spacing: 3px;
+}
+
+#boot-log {
+    font-size: 12px;
+    color: #00cc00;
+    line-height: 1.7;
+    min-height: 140px;
+    border-left: 2px solid #003300;
+    padding-left: 12px;
+}
+
+#boot-log .log-line { display: block; }
+#boot-log .log-ok   { color: #00ff00; }
+#boot-log .log-warn { color: #ffaa00; }
+#boot-log .log-info { color: #00aaff; }
+
+#boot-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#boot-bar-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: #00aa00;
+}
+
+#boot-bar-track {
+    width: 100%;
+    height: 18px;
+    border: 1px solid #00ff00;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+}
+
+#boot-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: repeating-linear-gradient(
+        90deg,
+        #00ff00 0px, #00ff00 10px,
+        #003300 10px, #003300 14px
+    );
+    transition: width 0.15s linear;
+    box-shadow: 0 0 10px #00ff00;
+}
+
+#boot-bar-percent {
+    font-size: 11px;
+    color: #00ff00;
+    text-align: right;
+}
+
+#boot-ready {
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #00ff00;
+    text-align: center;
+    animation: blink 0.8s infinite;
+}
+ 
 @keyframes blink {
     0%, 49% { opacity: 1; }
     50%, 100% { opacity: 0; }

@@ -1,3 +1,64 @@
+// ── BOOT SEQUENCE ──────────────────────────────────────────
+(function () {
+    const bootScreen = document.getElementById('boot-screen');
+    const bootLog    = document.getElementById('boot-log');
+    const barFill    = document.getElementById('boot-bar-fill');
+    const barPercent = document.getElementById('boot-bar-percent');
+    const bootReady  = document.getElementById('boot-ready');
+
+    const logs = [
+        { text: '[  OK  ] Initializing kernel...........v5.15.0-oddyseus',  cls: 'log-ok',   delay: 300  },
+        { text: '[  OK  ] Loading hardware drivers',                         cls: 'log-ok',   delay: 600  },
+        { text: '[ INFO ] CPU: detected logical cores',                    cls: 'log-info', delay: 900  },
+        { text: '[  OK  ] Mounting filesystem /dev/sda1',                    cls: 'log-ok',   delay: 1200 },
+        { text: '[ WARN ] Legacy BIOS detected — switching to UEFI shim',   cls: 'log-warn', delay: 1600 },
+        { text: '[  OK  ] Network interface eth0 UP',                        cls: 'log-ok',   delay: 2000 },
+        { text: '[ INFO ] Resolving host: Haitdyckler.github.io',            cls: 'log-info', delay: 2400 },
+        { text: '[  OK  ] Terminal Hub service started',                     cls: 'log-ok',   delay: 2900 },
+        { text: '[  OK  ] Globe renderer initialised',                       cls: 'log-ok',   delay: 3300 },
+        { text: '[  OK  ] All systems nominal — launching shell',            cls: 'log-ok',   delay: 3800 },
+    ];
+
+    // Print log lines
+    logs.forEach(({ text, cls, delay }) => {
+        setTimeout(() => {
+            const span = document.createElement('span');
+            span.className = 'log-line ' + cls;
+            span.textContent = text;
+            bootLog.appendChild(span);
+        }, delay);
+    });
+
+    // Animate progress bar over ~4.5 s
+    const totalDuration = 4500;
+    const startTime = performance.now();
+
+    function animateBar(now) {
+        const elapsed = now - startTime;
+        const pct = Math.min(100, Math.round((elapsed / totalDuration) * 100));
+        barFill.style.width = pct + '%';
+        barPercent.textContent = pct + '%';
+        if (pct < 100) {
+            requestAnimationFrame(animateBar);
+        } else {
+            // Show "press any key"
+            setTimeout(() => {
+                bootReady.style.display = 'block';
+                document.addEventListener('keydown', dismissBoot, { once: true });
+                document.addEventListener('click',   dismissBoot, { once: true });
+                // Auto-dismiss after 5 s of inactivity
+                setTimeout(dismissBoot, 3000);
+            }, 300);
+        }
+    }
+    requestAnimationFrame(animateBar);
+
+    function dismissBoot() {
+        bootScreen.classList.add('fade-out');
+        setTimeout(() => bootScreen.remove(), 800);
+    }
+})();
+// ── END BOOT SEQUENCE ──────────────────────────────────────
 // Terminal State
 let commandHistory = [];
 let historyIndex = -1;
@@ -327,6 +388,7 @@ const commands = {
         print('  echo      - Print text to terminal');
         print('  date      - Show current date and time');
         print('  whoami    - Display current user');
+        print('  version   - Shows the current Version and Device information');
     },
     typetest: () => {
         startTypingTest();
@@ -342,6 +404,49 @@ const commands = {
     },
     whoami: () => {
         print('<user>');
+    },
+    version: () => {
+        const ua = navigator.userAgent;
+        function getOS() {
+            if (/Windows NT 10.0/.test(ua)) return 'Windows 10/11';
+            if (/Windows NT 6.3/.test(ua)) return 'Windows 8.1';
+            if (/Windows NT 6.1/.test(ua)) return 'Windows 7';
+            if (/Mac OS X ([\d_]+)/.test(ua)) return 'macOS ' + ua.match(/Mac OS X ([\d_]+)/)[1].replace(/_/g, '.');
+            if (/Android ([\d.]+)/.test(ua)) return 'Android ' + ua.match(/Android ([\d.]+)/)[1];
+            if (/iPhone OS ([\d_]+)/.test(ua)) return 'iOS ' + ua.match(/iPhone OS ([\d_]+)/)[1].replace(/_/g, '.');
+            if (/Linux/.test(ua)) return 'Linux';
+            return 'Unknown OS';
+        }
+        function getDevice() {
+            if (/iPhone/.test(ua)) return 'iPhone';
+            if (/iPad/.test(ua)) return 'iPad';
+            if (/Android/.test(ua)) {
+                const match = ua.match(/;\s([^;)]+)\sBuild/);
+                return match ? match[1].trim() : 'Android Device';
+            }
+            if (/Macintosh/.test(ua)) return 'Mac';
+            if (/Windows/.test(ua)) return 'Windows PC';
+            return 'Unknown Device';
+        }
+        function getBrowser() {
+        if (/Edg\//.test(ua)) return 'Edge ' + ua.match(/Edg\/([\d.]+)/)[1];
+        if (/Chrome\/([\d.]+)/.test(ua)) return 'Chrome ' + ua.match(/Chrome\/([\d.]+)/)[1];
+        if (/Firefox\/([\d.]+)/.test(ua)) return 'Firefox ' + ua.match(/Firefox\/([\d.]+)/)[1];
+        if (/Safari\/([\d.]+)/.test(ua) && !/Chrome/.test(ua)) return 'Safari';
+        return 'Unknown Browser';
+        }
+        print('OS:       Oddyseus v1.0 64', 'success');
+        print('Host:     Haitdyckler.github.io', 'success');
+        print('');
+        print('--- Device Info ---');
+        print(`Device:   ${getDevice()}`);
+        print(`System:   ${getOS()}`);
+        print(`Browser:  ${getBrowser()}`);
+        print(`CPU:      ${navigator.hardwareConcurrency} logical cores`);
+        print(`RAM:      ${navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'N/A'}`);
+        print(`Screen:   ${screen.width}x${screen.height} (${window.devicePixelRatio}x DPR)`);
+        print(`Language: ${navigator.language}`);
+        print('');
     }
 };
 
@@ -397,6 +502,25 @@ input.addEventListener('keydown', (e) => {
 });
 
 // Welcome message
-print('Terminal Hub v1.0', 'success');
+print('(base)', 'success');
+print('');
+
+const ascii_header = [
+    String.raw`$$$$$$$\                                      $$\   $$\           $$\       $$\           `,
+    String.raw`$$  __$$\                                     $$$\  $$ |          $$ |      \__|          `,
+    String.raw`$$ |  $$ | $$$$$$\  $$\   $$\  $$$$$$$\       $$$$\ $$ | $$$$$$\  $$$$$$$\  $$\  $$$$$$$\ `,
+    String.raw`$$ |  $$ |$$  __$$\ $$ |  $$ |$$  _____|      $$ $$\$$ |$$  __$$\ $$  __$$\ $$ |$$  _____|`,
+    String.raw`$$ |  $$ |$$$$$$$$ |$$ |  $$ |\$$$$$$\        $$ \$$$$ |$$ /  $$ |$$ |  $$ |$$ |\$$$$$$\  `,
+    String.raw`$$ |  $$ |$$   ____|$$ |  $$ | \____$$\       $$ |\$$$ |$$ |  $$ |$$ |  $$ |$$ | \____$$\ `,
+    String.raw`$$$$$$$  |\$$$$$$$\ \$$$$$$  |$$$$$$$  |      $$ | \$$ |\$$$$$$  |$$$$$$$  |$$ |$$$$$$$  |`,
+    String.raw`\_______/  \_______| \______/ \_______/       \__|  \__| \______/ \_______/ \__|\_______/ `
+];
+ascii_header.forEach(line =>{
+    const div = document.createElement('div');
+    div.className = 'output-line ascii-art';
+    div.style.whiteSpace = 'pre';
+    div.textContent = line;
+    output.appendChild(div)
+});                                                                                     
 print('Type "help" for available commands');
 print('');

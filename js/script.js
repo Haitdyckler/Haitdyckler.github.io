@@ -134,7 +134,9 @@ document.getElementById('arcadeStartIcon')?.addEventListener('click', () => {
 document.getElementById('ResumeIcon')?.addEventListener('click', () => {
     window.location.href = 'resume.html';
 });
-
+document.getElementById('TerminalBtn')?.addEventListener('click', () => {
+    window.location.href = 'terminal.html';
+});
 // ===== DRAG SYSTEM — FIXED (no jump, ignores buttons) =====
 function makeWindowDraggable(windowEl, titleBarEl) {
     if (!windowEl || !titleBarEl) return;
