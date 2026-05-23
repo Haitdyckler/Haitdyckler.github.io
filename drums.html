@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Drum Kit</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0a;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Share Tech Mono', monospace;
+    color: #f0ead6;
+    padding: 1rem;
+  }
+
+  .shell {
+    background: #111;
+    border-radius: 16px;
+    padding: 1.25rem 1.25rem 1rem;
+    width: 100%;
+    max-width: 680px;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8);
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .title {
+    font-family: 'Black Han Sans', sans-serif;
+    font-size: 22px;
+    letter-spacing: 6px;
+    color: #f0ead6;
+  }
+
+  .credit {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #444;
+  }
+
+  #loader { margin-bottom: 1rem; }
+  .load-label { font-size: 10px; letter-spacing: 3px; color: #555; margin-bottom: 6px; }
+  .load-track { height: 3px; background: #222; border-radius: 2px; overflow: hidden; }
+  .load-fill  { height: 100%; background: #f0ead6; border-radius: 2px; width: 0%; transition: width 0.2s ease; }
+
+  .stage {
+    position: relative;
+    width: 560px;
+    height: 340px;
+    transform-origin: top left;
+  }
+
+  .stage-wrap {
+    width: 100%;
+    overflow: visible;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0;
+  }
+
+  .pad {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    transition: filter 0.06s ease;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* default hover/hit for non-tom pads */
+  .pad:hover { filter: brightness(1.4); }
+  .pad.hit   { filter: brightness(2.4); }
+
+  /* toms go DARKER on hover/hit — override the defaults above */
+  .tom:hover,  .floor:hover { filter: brightness(0.68); }
+  .tom.hit,    .floor.hit   { filter: brightness(0.48); }
+
+  .pad .pname {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.55);
+    text-align: center;
+    line-height: 1.3;
+    pointer-events: none;
+  }
+  .pad .pkey {
+    font-size: 9px;
+    color: rgba(255,255,255,0.25);
+    margin-top: 2px;
+    pointer-events: none;
+  }
+
+  .cymbal { background: #2e2500; border-color: rgba(255,210,0,0.25); overflow: hidden; }
+  .cymbal .pname { color: rgba(255,210,80,0.75); }
+
+  .tom   { background: #d8d0c0; border-color: rgba(220,80,60,0.35); }
+  .tom   .pname { color: rgba(80,40,30,0.85); }
+  .tom   .pkey  { color: rgba(80,40,30,0.45); }
+
+  .snare { background: #0d0d25; border-color: rgba(110,110,255,0.25); }
+  .snare .pname { color: rgba(160,160,255,0.8); }
+
+  .floor { background: #cec8b8; border-color: rgba(200,130,0,0.3); }
+  .floor .pname { color: rgba(80,55,10,0.85); }
+  .floor .pkey  { color: rgba(80,55,10,0.4); }
+
+  .kick  { background: #1a0505; border-color: rgba(255,50,50,0.3); }
+  .kick  .pname { color: rgba(255,110,90,0.85); }
+
+  .controls {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .hit-label {
+    text-align: center;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: rgba(240,234,214,0.15);
+    min-height: 16px;
+    margin-bottom: 0.6rem;
+    transition: color 0.4s;
+  }
+
+  .beat-dots {
+    display: flex;
+    gap: 7px;
+    justify-content: center;
+    margin-bottom: 0.75rem;
+  }
+  .bd { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.09); transition:background 0.05s; }
+  .bd.acc { width:9px; height:9px; }
+  .bd.lit { background:#f0ead6; }
+
+  .bpm-row { display:flex; align-items:center; gap:12px; }
+  .blabel { font-size:10px; letter-spacing:3px; color:#555; min-width:32px; }
+  .bval   { font-size:18px; font-weight:500; min-width:44px; color:#f0ead6; }
+  input[type=range] { flex:1; accent-color:#f0ead6; cursor:pointer; }
+
+  .mbtn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    color: #777;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .mbtn:hover { border-color:rgba(255,255,255,0.3); color:#f0ead6; }
+  .mbtn.on    { background:#f0ead6; color:#111; border-color:#f0ead6; }
+
+  .shortcuts {
+    margin-top: 0.75rem;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+  .sc {
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #444;
+    padding: 4px 2px;
+    border: 1px solid #1e1e1e;
+    border-radius: 4px;
+  }
+  .sc span { display:block; font-size:12px; color:#666; margin-bottom:2px; }
+
+  .rotate-hint { display: none; }
+  @media (max-width: 480px) and (orientation: portrait) {
+    .rotate-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: #555;
+      margin-bottom: 0.75rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header>
+    <h1 class="title">DRUM KIT</h1>
+    <span class="credit">Pearl Master Studio · CC BY 3.0</span>
+  </header>
+
+  <div class="rotate-hint" id="rotateHint">↻ rotate for best experience</div>
+
+  <div id="loader">
+    <div class="load-label" id="load-label">LOADING SAMPLES…</div>
+    <div class="load-track"><div class="load-fill" id="load-fill"></div></div>
+  </div>
+
+  <div class="stage-wrap" id="stageWrap">
+    <div class="stage" id="stage">
+
+      <!-- CRASH — z-index:10 so it sits on top -->
+      <div class="pad cymbal" id="pad-Q" data-sound="crash" data-key="Q" style="width:110px;height:110px;left:48px;top:0px;z-index:10;">
+        <svg viewBox="0 0 120 120" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,200,0,0.18)" stroke-width="1"/>
+          <circle cx="60" cy="60" r="42" fill="none" stroke="rgba(255,200,0,0.13)" stroke-width="1"/>
+          <circle cx="60" cy="60" r="30" fill="none" stroke="rgba(255,200,0,0.10)" stroke-width="1"/>
+          <circle cx="60" cy="60" r="16" fill="none" stroke="rgba(255,200,0,0.20)" stroke-width="1.5"/>
+          <circle cx="60" cy="60" r="6"  fill="rgba(255,200,0,0.15)"/>
+        </svg>
+        <div class="pname" style="position:relative;z-index:1;">CRASH</div>
+        <div class="pkey"  style="position:relative;z-index:1;">Q</div>
+      </div>
+
+      <!-- HI-HAT closed -->
+      <div class="pad cymbal" id="pad-W" data-sound="hihat-closed" data-key="W" style="width:82px;height:82px;left:160px;top:8px;">
+        <svg viewBox="0 0 82 82" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+          <circle cx="41" cy="41" r="36" fill="none" stroke="rgba(255,200,0,0.18)" stroke-width="1"/>
+          <circle cx="41" cy="41" r="27" fill="none" stroke="rgba(255,200,0,0.13)" stroke-width="1"/>
+          <circle cx="41" cy="41" r="17" fill="none" stroke="rgba(255,200,0,0.10)" stroke-width="1"/>
+          <circle cx="41" cy="41" r="8"  fill="none" stroke="rgba(255,200,0,0.20)" stroke-width="1.5"/>
+          <circle cx="41" cy="41" r="3"  fill="rgba(255,200,0,0.18)"/>
+        </svg>
+        <div class="pname" style="position:relative;z-index:1;">HI-HAT</div>
+        <div class="pkey"  style="position:relative;z-index:1;">W</div>
+      </div>
+
+      <!-- OPEN HI-HAT -->
+      <div class="pad cymbal" id="pad-E" data-sound="hihat-open" data-key="E" style="width:74px;height:74px;left:250px;top:6px;">
+        <svg viewBox="0 0 74 74" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+          <circle cx="37" cy="37" r="32" fill="none" stroke="rgba(255,200,0,0.18)" stroke-width="1"/>
+          <circle cx="37" cy="37" r="24" fill="none" stroke="rgba(255,200,0,0.13)" stroke-width="1"/>
+          <circle cx="37" cy="37" r="15" fill="none" stroke="rgba(255,200,0,0.10)" stroke-width="1"/>
+          <circle cx="37" cy="37" r="7"  fill="none" stroke="rgba(255,200,0,0.20)" stroke-width="1.5"/>
+          <circle cx="37" cy="37" r="3"  fill="rgba(255,200,0,0.18)"/>
+        </svg>
+        <div class="pname" style="position:relative;z-index:1;">OPEN<br>HH</div>
+        <div class="pkey"  style="position:relative;z-index:1;">E</div>
+      </div>
+
+      <!-- RIDE — new position -->
+      <div class="pad cymbal" id="pad-R" data-sound="ride" data-key="R" style="width:110px;height:110px;left:330px;top:20px;">
+        <svg viewBox="0 0 110 110" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;">
+          <circle cx="55" cy="55" r="48" fill="none" stroke="rgba(255,200,0,0.18)" stroke-width="1"/>
+          <circle cx="55" cy="55" r="38" fill="none" stroke="rgba(255,200,0,0.13)" stroke-width="1"/>
+          <circle cx="55" cy="55" r="26" fill="none" stroke="rgba(255,200,0,0.10)" stroke-width="1"/>
+          <circle cx="55" cy="55" r="13" fill="none" stroke="rgba(255,200,0,0.20)" stroke-width="1.5"/>
+          <circle cx="55" cy="55" r="5"  fill="rgba(255,200,0,0.18)"/>
+        </svg>
+        <div class="pname" style="position:relative;z-index:1;">RIDE</div>
+        <div class="pkey"  style="position:relative;z-index:1;">R</div>
+      </div>
+
+      <!-- SNARE — key F -->
+      <div class="pad snare" id="pad-D" data-sound="snare" data-key="F" style="width:110px;height:110px;left:32px;top:175px;">
+        <div class="pname">SNARE</div><div class="pkey">F</div>
+      </div>
+
+      <!-- HI TOM — key U -->
+      <div class="pad tom" id="pad-A" data-sound="tom-hi" data-key="U" style="width:90px;height:90px;left:95px;top:90px;">
+        <div class="pname">HI<br>TOM</div><div class="pkey">U</div>
+      </div>
+
+      <!-- MID TOM — key I -->
+      <div class="pad tom" id="pad-S" data-sound="tom-mid" data-key="I" style="width:84px;height:84px;left:192px;top:90px;">
+        <div class="pname">MID<br>TOM</div><div class="pkey">I</div>
+      </div>
+
+      <!-- FLOOR TOM — key O, new position -->
+      <div class="pad floor" id="pad-Z" data-sound="tom-floor" data-key="O" style="width:110px;height:110px;left:280px;top:120px;">
+        <div class="pname">FLOOR<br>TOM</div><div class="pkey">O</div>
+      </div>
+
+      <!-- KICK — key J, new position -->
+      <div class="pad kick" id="pad-X" data-sound="kick" data-key="J" style="width:138px;height:138px;left:220px;transform:translateX(-50%);top:180px;">
+        <div class="pname" style="font-size:13px;letter-spacing:2px;">KICK</div><div class="pkey">J</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="hit-label" id="hit-lbl"></div>
+
+    <div class="beat-dots">
+      <div class="bd acc" id="bd0"></div><div class="bd" id="bd1"></div>
+      <div class="bd acc" id="bd2"></div><div class="bd" id="bd3"></div>
+      <div class="bd acc" id="bd4"></div><div class="bd" id="bd5"></div>
+      <div class="bd acc" id="bd6"></div><div class="bd" id="bd7"></div>
+    </div>
+
+    <div class="bpm-row">
+      <span class="blabel">BPM</span>
+      <span class="bval" id="bval">120</span>
+      <input type="range" min="40" max="240" value="120" step="1" id="bslider">
+      <button class="mbtn" id="mbtn">CLICK</button>
+    </div>
+
+    <div class="shortcuts">
+      <div class="sc"><span>Q</span>CRASH</div>
+      <div class="sc"><span>W</span>HI-HAT</div>
+      <div class="sc"><span>E</span>OPEN HH</div>
+      <div class="sc"><span>R</span>RIDE</div>
+      <div class="sc"><span>U</span>HI TOM</div>
+      <div class="sc"><span>I</span>MID TOM</div>
+      <div class="sc"><span>F</span>SNARE</div>
+      <div class="sc"><span>O</span>FLOOR TOM</div>
+      <div class="sc"><span>J</span>KICK</div>
+      <div class="sc" style="color:#333">—</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+
+  /* ── Responsive scaling ── */
+  const STAGE_W = 560, STAGE_H = 340;
+
+  function scaleStage() {
+    const shell     = document.querySelector('.shell');
+    const wrap      = document.getElementById('stageWrap');
+    const stage     = document.getElementById('stage');
+    const available = shell.clientWidth - 40;
+    const scale     = Math.min(1, available / STAGE_W);
+    stage.style.transform = `scale(${scale})`;
+    wrap.style.height = Math.ceil(STAGE_H * scale) + 'px';
+  }
+
+  scaleStage();
+  window.addEventListener('resize', scaleStage);
+  window.addEventListener('orientationchange', () => setTimeout(scaleStage, 150));
+
+  /* ── Rotate hint ── */
+  function checkOrientation() {
+    const hint = document.getElementById('rotateHint');
+    hint.style.display = (window.innerWidth < 500 && window.innerHeight > window.innerWidth) ? 'flex' : 'none';
+  }
+  checkOrientation();
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('orientationchange', () => setTimeout(checkOrientation, 150));
+
+  /* ── Audio ── */
+  const BASE = 'https://oramics.github.io/sampled/DRUMS/pearl-master-studio/samples/';
+  const SAMPLE_MAP = {
+    'kick':         'kick-01.wav',
+    'snare':        'snare-01.wav',
+    'hihat-closed': 'hihat-closed.wav',
+    'hihat-open':   'hihat-open.wav',
+    'crash':        'crash-01.wav',
+    'ride':         'ride-01.wav',
+    'tom-hi':       'tom-01.wav',
+    'tom-mid':      'tom-02.wav',
+    'tom-floor':    'tom-03.wav',
+  };
+  const LABELS = {
+    'kick':'KICK','snare':'SNARE','hihat-closed':'HI-HAT','hihat-open':'OPEN HH',
+    'crash':'CRASH','ride':'RIDE','tom-hi':'HI TOM','tom-mid':'MID TOM','tom-floor':'FLOOR TOM'
+  };
+
+  const actx = new (window.AudioContext || window.webkitAudioContext)();
+  const buffers = {};
+  const skeys = Object.keys(SAMPLE_MAP);
+  let loaded = 0;
+
+  function updateLoader() {
+    loaded++;
+    const pct = Math.round((loaded / skeys.length) * 100);
+    document.getElementById('load-fill').style.width = pct + '%';
+    if (loaded === skeys.length) {
+      document.getElementById('load-label').textContent = 'READY';
+      setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 600);
+    }
+  }
+
+  skeys.forEach(key => {
+    fetch(BASE + SAMPLE_MAP[key])
+      .then(r => r.arrayBuffer())
+      .then(ab => actx.decodeAudioData(ab))
+      .then(buf => { buffers[key] = buf; updateLoader(); })
+      .catch(() => updateLoader());
+  });
+
+  function playSound(key) {
+    if (!buffers[key]) return;
+    if (actx.state === 'suspended') actx.resume();
+    const src = actx.createBufferSource();
+    src.buffer = buffers[key];
+    src.connect(actx.destination);
+    src.start(0);
+  }
+
+  /* ── Pad interactions ── */
+  const keyMap = {};
+  document.querySelectorAll('.pad').forEach(p => {
+    if (p.dataset.key) keyMap[p.dataset.key] = p;
+    p.addEventListener('mousedown',  e => { e.preventDefault(); hit(p); });
+    p.addEventListener('touchstart', e => { e.preventDefault(); hit(p); }, { passive: false });
+  });
+
+  function hit(pad) {
+    const s = pad.dataset.sound;
+    playSound(s);
+    pad.classList.add('hit');
+    setTimeout(() => pad.classList.remove('hit'), 110);
+    const el = document.getElementById('hit-lbl');
+    el.textContent = LABELS[s] || s;
+    el.style.color = 'rgba(240,234,214,0.65)';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.color = 'rgba(240,234,214,0.15)'; }, 900);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    const p = keyMap[e.key.toUpperCase()];
+    if (p) hit(p);
+  });
+
+  /* ── Metronome — uses kick sample ── */
+  const bslider = document.getElementById('bslider');
+  const bval    = document.getElementById('bval');
+  bslider.addEventListener('input', () => { bval.textContent = bslider.value; if (mon) restart(); });
+
+  let mon = false, miv = null, beat = 0;
+
+  function tick() {
+    for (let i = 0; i < 8; i++) document.getElementById('bd' + i).classList.remove('lit');
+    document.getElementById('bd' + beat).classList.add('lit');
+    if (beat % 2 === 0) playSound('kick');
+    beat = (beat + 1) % 8;
+  }
+
+  function restart() {
+    clearInterval(miv);
+    beat = 0;
+    miv = setInterval(tick, (60000 / parseInt(bslider.value)) / 2);
+  }
+
+  document.getElementById('mbtn').addEventListener('click', function () {
+    if (actx.state === 'suspended') actx.resume();
+    mon = !mon;
+    this.classList.toggle('on', mon);
+    if (mon) restart();
+    else {
+      clearInterval(miv);
+      for (let i = 0; i < 8; i++) document.getElementById('bd' + i).classList.remove('lit');
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
