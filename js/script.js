@@ -137,6 +137,9 @@ document.getElementById('ResumeIcon')?.addEventListener('click', () => {
 document.getElementById('TerminalBtn')?.addEventListener('click', () => {
     window.location.href = 'terminal.html';
 });
+document.getElementById('DrumsBtn')?.addEventListener('click', () => {
+    window.location.href = 'drums.html';
+});
 // ===== DRAG SYSTEM — FIXED (no jump, ignores buttons) =====
 function makeWindowDraggable(windowEl, titleBarEl) {
     if (!windowEl || !titleBarEl) return;
