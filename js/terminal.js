@@ -615,6 +615,18 @@ const CORRIDOR = (() => {
     }
 
     // ── SSE listener (Firebase streaming REST) ──────────────────
+    async function processMessage(ts, m) {
+        const numTs = Number(ts);
+        if (numTs <= lastMsgTS) return;
+        lastMsgTS = numTs;
+        if (!m || !m.ciphertext) return;
+        const plain = await decrypt(m.ciphertext);
+        if (plain === null) return; // wrong room / tampered
+        const isMe = m.sender === corridorUser;
+        const time = new Date(numTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        renderMessage(m.sender, plain, time, isMe);
+    }
+
     function startListening() {
         const url = `${FB_URL}/corridor/${roomPath()}/msgs.json`;
         const es  = new EventSource(url);
@@ -623,19 +635,21 @@ const CORRIDOR = (() => {
         es.addEventListener('put', async (evt) => {
             try {
                 const data = JSON.parse(evt.data);
-                if (!data || !data.data) return;
-                const msgs = data.data;
-                for (const ts of Object.keys(msgs).sort()) {
-                    const numTs = Number(ts);
-                    if (numTs <= lastMsgTS) continue;
-                    lastMsgTS = numTs;
-                    const m = msgs[ts];
-                    if (!m || !m.ciphertext) continue;
-                    const plain = await decrypt(m.ciphertext);
-                    if (plain === null) continue; // wrong room / tampered
-                    const isMe   = m.sender === corridorUser;
-                    const time   = new Date(numTs).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-                    renderMessage(m.sender, plain, time, isMe);
+                if (!data || data.data === null || data.data === undefined) return;
+
+                // Firebase sends two shapes for 'put':
+                //   1. Initial snapshot: path="/" data={ts: msgObj, ...}  (map of all messages)
+                //   2. New single write: path="/timestamp"  data={sender, ciphertext}
+                if (data.path === '/') {
+                    // Full snapshot — iterate the map
+                    const msgs = data.data;
+                    for (const ts of Object.keys(msgs).sort()) {
+                        await processMessage(ts, msgs[ts]);
+                    }
+                } else {
+                    // Single message — path is the timestamp key
+                    const ts = data.path.replace(/^\//, '');
+                    await processMessage(ts, data.data);
                 }
             } catch (err) { /* ignore parse errors */ }
         });
@@ -644,18 +658,10 @@ const CORRIDOR = (() => {
             try {
                 const data = JSON.parse(evt.data);
                 if (!data || !data.data) return;
+                // patch delivers a flat {timestamp: msgObj} map
                 const msgs = data.data;
                 for (const ts of Object.keys(msgs).sort()) {
-                    const numTs = Number(ts);
-                    if (numTs <= lastMsgTS) continue;
-                    lastMsgTS = numTs;
-                    const m = msgs[ts];
-                    if (!m || !m.ciphertext) continue;
-                    const plain = await decrypt(m.ciphertext);
-                    if (plain === null) continue;
-                    const isMe   = m.sender === corridorUser;
-                    const time   = new Date(numTs).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-                    renderMessage(m.sender, plain, time, isMe);
+                    await processMessage(ts, msgs[ts]);
                 }
             } catch (err) { /* ignore */ }
         });
