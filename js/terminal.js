@@ -548,7 +548,7 @@ print('');
 const CORRIDOR = (() => {
     // ── Firebase Realtime Database REST endpoint ──
     // Replace with your own: https://YOUR-PROJECT-default-rtdb.firebaseio.com
-    const FB_URL = 'https://corridor-hub-default-rtdb.firebaseio.com';
+    const FB_URL = 'https://corridor-chat-room-default-rtdb.asia-southeast1.firebasedatabase.app/';
 
     // ── State ──
     let corridorActive  = false;
