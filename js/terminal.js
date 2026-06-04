@@ -541,10 +541,6 @@ print('Type "help" for available commands');
 print('');
 
 // ── CORRIDOR — Encrypted P2P Chat ─────────────────────────────────────────
-// SETUP: Create a free Firebase Realtime Database at https://console.firebase.google.com
-// Set database rules to: { "rules": { "corridor": { ".read": true, ".write": true } } }
-// Then replace the FB_URL below with your database URL.
-
 const CORRIDOR = (() => {
     // ── Firebase Realtime Database REST endpoint ──
     const FB_URL = 'https://corridor-chat-room-default-rtdb.asia-southeast1.firebasedatabase.app/';
@@ -559,7 +555,6 @@ const CORRIDOR = (() => {
     let lastMsgTS       = 0;
     let setupStep       = 0;      // 0=idle,1=awaiting username,2=awaiting room
     let presenceId      = null;
-    let partnerHasJoined = false;
 
     // ── Crypto helpers ──────────────────────────────────────────
     async function deriveKey(roomCode) {
@@ -629,7 +624,6 @@ const CORRIDOR = (() => {
 
     // Register presence and listen for partner disconnecting
     async function fbRegisterAndWatchPresence() {
-        partnerHasJoined = false; // Reset whenever entering a new room
         presenceId = `${corridorUser}_${Date.now()}`;
         const presUrl = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
         
@@ -639,6 +633,7 @@ const CORRIDOR = (() => {
             body   : JSON.stringify({ user: corridorUser, joined: Date.now() })
         });
 
+        // Watch presence adjustments
         presenceWatchEs = new EventSource(`${FB_URL}/corridor/${roomPath()}/presence.json`);
         
         const handlePresenceChange = async (evt) => {
@@ -647,31 +642,29 @@ const CORRIDOR = (() => {
                 const parsed = JSON.parse(evt.data);
                 if (!parsed) return;
 
+                // Evaluate the current state of presence keys remaining
                 let currentPresence = {};
                 if (parsed.path === '/' && parsed.data) {
                     currentPresence = parsed.data;
                 } else if (parsed.path === '/' && parsed.data === null) {
                     currentPresence = {};
-                } else if (parsed.path && parsed.path !== '/') {
-                    // Handle granular updates if Firebase pushes them
-                    const res = await fetch(`${FB_URL}/corridor/${roomPath()}/presence.json`);
-                    currentPresence = await res.json() || {};
                 }
 
                 const remainingKeys = Object.keys(currentPresence);
 
-                // If there's more than 1 person in the room, the partner is present!
-                if (remainingKeys.length > 1) {
-                    partnerHasJoined = true;
-                }
-
-                // If we were explicitly removed by a database clear
+                // If someone was here, but now your key is either alone or presence is empty
                 if (remainingKeys.length > 0 && !remainingKeys.includes(presenceId)) {
+                    // This means WE were removed or room was cleared externally
                     handlePartnerLeft();
-                } 
-                // Only trigger "partner left" if they were actually here in the first place!
-                else if (partnerHasJoined && remainingKeys.length === 1 && remainingKeys[0] === presenceId) {
-                    handlePartnerLeft();
+                } else if (remainingKeys.length === 1 && remainingKeys[0] === presenceId) {
+                    // Check if a partner used to be here by inspecting if there are any messages 
+                    // or if we simply detect we are now completely alone.
+                    const res = await fetch(`${FB_URL}/corridor/${roomPath()}/msgs.json`);
+                    const msgs = await res.json();
+                    if (msgs && Object.keys(msgs).length > 0) {
+                        // There is chat history, but only 1 person left in presence. Partner dropped!
+                        handlePartnerLeft();
+                    }
                 }
             } catch (err) { /* ignore parsing drops */ }
         };
@@ -698,33 +691,20 @@ const CORRIDOR = (() => {
     }
 
     function exitCorridorCleanly(shouldWipeDatabase = true) {
-        // 1. Immediately kill active status so listeners stop processing incoming actions
         corridorActive = false;
         
-        // 2. Tear down network streams immediately before messing with database data
-        if (corridorSub) { 
-            corridorSub.close(); 
-            corridorSub = null; 
-        }
-        if (presenceWatchEs) { 
-            presenceWatchEs.close(); 
-            presenceWatchEs = null; 
-        }
-
-        // 3. Remove the unload listener so it doesn't fire duplicate requests later
-        window.removeEventListener('beforeunload', fbRemovePresenceSync);
+        if (corridorSub) { corridorSub.close(); corridorSub = null; }
+        if (presenceWatchEs) { presenceWatchEs.close(); presenceWatchEs = null; }
         
-        // 4. Handle database teardown orchestrations safely
         if (shouldWipeDatabase) {
             fbRemovePresenceAsync().then(() => {
                 fbWipeRoom();
-                presenceId = null; // Clean up ID after successful removal string generation
             });
         } else {
             presenceId = null;
         }
 
-        // 5. Restore standard terminal sidebar UI configurations
+        // Restore score box UI
         const scoreBox = document.querySelector('.score-box');
         if (scoreBox) scoreBox.style.display = '';
         
@@ -734,12 +714,7 @@ const CORRIDOR = (() => {
         print('Type "help" for available commands');
         print('');
         
-        // 6. Completely reset variables for pristine initialization next time
-        corridorUser = ''; 
-        corridorRoom = ''; 
-        corridorKey = null; 
-        lastMsgTS = 0; 
-        partnerHasJoined = false;
+        corridorUser = ''; corridorRoom = ''; corridorKey = null; lastMsgTS = 0;
     }
 
     // ── SSE message listener ──────────────────
@@ -762,26 +737,13 @@ const CORRIDOR = (() => {
         corridorSub.addEventListener('put', async (evt) => {
             try {
                 const data = JSON.parse(evt.data);
-                
-                // ── 1. DETECT DATABASE WIPE ──
-                // When the first user exits and deletes the room path, Firebase sends
-                // a payload where data is null and the path is the root ("/")
-                if (!data || data.data === null) {
+                if (!data || data.data === null || data.data === undefined) {
+                    // If data becomes null, room was wiped! Clear screen.
                     if (data && data.path === '/') {
-                        // Clear the local terminal for the second user
-                        clear(); 
-                        
-                        // Notify the second user and drop them out safely
-                        printCorridor('━━ The other user has left the corridor. ━━', 'warning');
-                        printCorridor('━━ Chat history has been completely wiped from Firebase and Terminal. ━━', 'warning');
-                        
-                        // Exit the corridor module without attempting to wipe database again
-                        exitCorridorCleanly(false); 
+                        clear();
                     }
                     return;
                 }
-
-                // ── 2. PROCESS REGULAR INCOMING MESSAGES ──
                 if (data.path === '/') {
                     const msgs = data.data;
                     for (const ts of Object.keys(msgs).sort()) {
@@ -791,9 +753,7 @@ const CORRIDOR = (() => {
                     const ts = data.path.replace(/^\//, '');
                     await processMessage(ts, data.data);
                 }
-            } catch (err) {
-                // Ignore structural parsing drops
-            }
+            } catch (err) { }
         });
 
         corridorSub.onerror = () => {
@@ -958,27 +918,3 @@ const CORRIDOR = (() => {
 
     return { corridorInit, handleInput, isSetupActive: () => setupStep > 0, isActive: () => corridorActive };
 })();
-
-// Override input handler to intercept corridor input
-const _origInput = input.cloneNode();
-input.addEventListener('keydown', async (e) => {
-    if (e.key !== 'Enter') return;
-    if (CORRIDOR.isSetupActive() || CORRIDOR.isActive()) {
-        e.stopImmediatePropagation();
-        const val = input.value;
-        input.value = '';
-        if (CORRIDOR.isActive() && val.trim() !== '/exit') {
-            // echo in terminal as sent message — handled by listener rendering
-        } else {
-            // show what user typed for setup steps
-            if (CORRIDOR.isSetupActive()) {
-                print('$ ' + val, 'success');
-            }
-        }
-        await CORRIDOR.handleInput(val);
-    }
-}, true); // capture phase — fires before existing keydown handler
-
-function corridorInit() {
-    CORRIDOR.corridorInit();
-}
