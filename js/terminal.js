@@ -596,6 +596,9 @@ const CORRIDOR = (() => {
         return corridorRoom.replace(/[.#$/[\]]/g, '_');
     }
 
+    let presenceId = null;
+    let presenceWatchEs = null;
+
     async function fbWrite(payload) {
         const ts  = Date.now();
         const url = `${FB_URL}/corridor/${roomPath()}/msgs/${ts}.json`;
@@ -604,14 +607,57 @@ const CORRIDOR = (() => {
             headers: { 'Content-Type': 'application/json' },
             body   : JSON.stringify(payload)
         });
-        // Schedule self-destruct (TTL) — overwrite with null after 24h
-        // (Firebase TTL rules are set server-side; client cleanup on disconnect)
+    }
+
+    async function fbWipeRoom() {
+        const roomUrl = `${FB_URL}/corridor/${roomPath()}.json`;
+        fetch(roomUrl, { method: 'DELETE' }).catch(() => {});
     }
 
     async function fbCleanup() {
-        // Delete entire room on leave
-        const url = `${FB_URL}/corridor/${roomPath()}.json`;
-        fetch(url, { method: 'DELETE' }).catch(() => {});
+        // Remove this user's presence entry
+        if (presenceId) {
+            const presUrl = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
+            try { await fetch(presUrl, { method: 'DELETE' }); } catch { /* ignore */ }
+            presenceId = null;
+        }
+        if (presenceWatchEs) { presenceWatchEs.close(); presenceWatchEs = null; }
+        // If no one is left in the room, wipe everything
+        try {
+            const res  = await fetch(`${FB_URL}/corridor/${roomPath()}/presence.json`);
+            const data = await res.json();
+            if (!data || Object.keys(data).length === 0) fbWipeRoom();
+        } catch { fbWipeRoom(); }
+    }
+
+    // Register presence and watch for the room becoming empty
+    async function fbRegisterPresence() {
+        presenceId = `${corridorUser}_${Date.now()}`;
+        const presUrl = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
+        await fetch(presUrl, {
+            method : 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify({ user: corridorUser, joined: Date.now() })
+        });
+
+        // Watch the presence node — wipe room the moment it hits 0
+        presenceWatchEs = new EventSource(`${FB_URL}/corridor/${roomPath()}/presence.json`);
+        const onPresenceData = async (evt) => {
+            try {
+                const d = JSON.parse(evt.data);
+                const entries = d.data ? Object.keys(d.data) : [];
+                if (entries.length === 0) {
+                    fbWipeRoom();
+                    presenceWatchEs.close();
+                    presenceWatchEs = null;
+                    if (corridorActive) {
+                        printCorridor('━━ Other user left — room wiped. Type /exit to close. ━━', 'warning');
+                    }
+                }
+            } catch { /* ignore */ }
+        };
+        presenceWatchEs.addEventListener('put',   onPresenceData);
+        presenceWatchEs.addEventListener('patch', onPresenceData);
     }
 
     // ── SSE listener (Firebase streaming REST) ──────────────────
@@ -798,10 +844,18 @@ const CORRIDOR = (() => {
             printCorridor('Type /exit to leave the corridor.', '');
             print('');
 
-            // Register disconnect cleanup via beacon
+            // Register presence (tracks who's in the room, triggers wipe when empty)
+            await fbRegisterPresence();
+
+            // On tab close / navigation — synchronously remove presence via sendBeacon
             window.addEventListener('beforeunload', () => {
-                fbCleanup();
+                if (presenceId) {
+                    // sendBeacon survives tab close; DELETE isn't supported so POST a null overwrite
+                    const presUrl = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
+                    navigator.sendBeacon(presUrl + '?_method=DELETE', new Blob(['null'], { type: 'application/json' }));
+                }
                 if (corridorSub) corridorSub.close();
+                if (presenceWatchEs) presenceWatchEs.close();
             });
 
             startListening();
