@@ -88,7 +88,7 @@ const earthTextureRaw = [
     "@@@@@@%**+##@@%#.:**####*#*#*****%@@@@@%*++%*#@@@@@@@@@@@@@@@@@@@@@@%@@@*#%##@@######*##****###################*##***********%%%%#@@*%@@@@@@",
     "@@@@@@%@@@@@@@@@@@@*#%##****##########@#*##*#*#%@@@@@@@@@@@@@@@@@@%*#*@@@*#%%#+**+**++*+++++*++++++=+++***##**#*#*********#%@@@@@@#*#@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@%####*:.:==+*#####**###%%%%%%@@@@@@@@@@@@@@@@@@@##+=++**+*++++++++==-----:.::---:-++=:.==+++*+--=*++****%%@@@@@@@@@@@@@@",
-    "@@@@@@@@@@@@@@@@@@@@@@*==+=-:--=++**###****##%@@@@@@@@@@@@@@@@@@@@@@@#++**+#++++=#%##+=:+*          :-:            .=:=**+#@@%@@@@@@@@@@@@@@",
+    "@@@@@@@@@@@@@@@@@@@@@@*==+=-:--=++**###****##%@@@@@@@@@@@@@@@@@@@@@@@#++**+#++++=#%##+=:+* :-:            .=:=**+#@@%@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@*.. -:+:-=+++++++**%@@@@@@@@@@@@@@@@@@@@@@@@%=:-%@@*@%+#+#++-:====-*+     .:-.             .:++***@@@@#@@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@%-  . :::-=++++**+%@@@@@@@@@@@@@@@@@@@@@@@@@@#*+.   #@@@@%@%%%      .      -=.        .-::==+=*@@*%%%##@@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@%-.:   -=**#**#@@@@@@@@@@@@@@@@@@@@@@@@@@@.          :   ..               .==. ..--=+*++*+=+++@@%@@@@@@@@@@@@@@@@@@@",
@@ -96,14 +96,14 @@ const earthTextureRaw = [
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+-=%@@#@%%*%%%@@@@@@@@@@@@@@@@@@@@                     +        %@@@-.:::.-+#=-===++#@@@@@@@@@@@@@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%#****%@@@@@@@@@@@@@@@@@@@@@@@@@@+                     #-    *@@@@@@*. =%@@@#===-*@@@@%#@@@@@@@@@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@**@@@#*%@@@@@@@@@@@@@@@@@@@*===-:.:.   ..-:  ::==-:%%*@@@@@@@@@+:%@@@@@@+%+=#@@@@%#@@@@@@@@@@@@@@@@@@@@@",
-    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%+++=++*%@@@@@@@@@@@@@@@@@*+===----+++****+++==   *@@@@@@@@@@@*@@@@@@%%@@@@@%@%*@@@@@@@@@@@@@@@@@@@@@",
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%+++=++*%@@@@@@@@@@@@@@@@@*+===----+++****+++==   *@@@@@@@@@@@*@@@@@@%%@@@@@%@%*@@@@@@@@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#++**#*+***#@@@@@@@@@@@@@@@@@@@@@@%++#**##*+-..:-%@@@@@@@@@@@@@@@@@@@**%@@###@@@@@@@@@@@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#+**######*****#%@@@@@@@@@@@@@@@@@@%*+*####+*=--@@@@@@@@@@@@@@@@@@@@@@@#*#%**%%%@@%%%#%@@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%+#########*++++=-#@@@@@@@@@@@@@@@@@@+*+*++#+=+%@@@@@@@@@@@@@@@@@@@@@@@@@##*@@@@@@@@%%*+*%@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@=###******+=+==#@@@@@@@@@@@@@@@@@@@*+*****+*+*@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%*#@@#@@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@+:-***++====++@@@@@@@@@@@@@@@@@@@+---===+=+*#@*=%@@@@@@@@@@@@@@@@@@@@@@@@@@@%=:--=+*=*@@@@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@* :++++==+=+%@@@@@@@@@@@@@@@@@@@@::...--=*@@@=*@@@@@@@@@@@@@@@@@@@@@@@@@%=:...:::...-=%@@@@@%@@@@@",
-    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*.=+*+++*@@@@@@@@@@@@@@@@@@@@@@@@*   :--+@@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@-.------.   -==#@@@@@@@@@@",
+    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@*.=+*+++*@@@@@@@@@@@@@@@@@@@@@@@@* :--+@@@@%@@@@@@@@@@@@@@@@@@@@@@@@@@-.------.   -==#@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@=:====++%@@@@@@@@@@@@@@@@@@@@@@@@@%:.:-+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@-==--=-.  .--+%@@@@@@@@@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@:-==++%@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%%@@@@@@#==-+%@@@@@@@@%@@",
     "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#=-=+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#@",
@@ -559,6 +559,7 @@ const CORRIDOR = (() => {
     let lastMsgTS       = 0;
     let setupStep       = 0;      // 0=idle,1=awaiting username,2=awaiting room
     let presenceId      = null;
+    let localPresence   = {};     // Tracks granular dynamic room membership changes
 
     // ── Crypto helpers ──────────────────────────────────────────
     async function deriveKey(roomCode) {
@@ -614,7 +615,9 @@ const CORRIDOR = (() => {
     async function fbRemovePresenceSync() {
         if (presenceId) {
             const url = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json?_method=DELETE`;
-            navigator.sendBeacon(url, new Blob(['null'], { type: 'application/json' }));
+            // Fixed: Payload is an empty string to keep it a CORS "Simple Request",
+            // preventing the browser from canceling the preflight step when closing the tab.
+            navigator.sendBeacon(url, '');
         }
     }
 
@@ -637,6 +640,9 @@ const CORRIDOR = (() => {
             body   : JSON.stringify({ user: corridorUser, joined: Date.now() })
         });
 
+        // Clear local registry cache for new room session
+        localPresence = {};
+
         // Watch presence adjustments
         presenceWatchEs = new EventSource(`${FB_URL}/corridor/${roomPath()}/presence.json`);
         
@@ -646,27 +652,31 @@ const CORRIDOR = (() => {
                 const parsed = JSON.parse(evt.data);
                 if (!parsed) return;
 
-                // Evaluate the current state of presence keys remaining
-                let currentPresence = {};
-                if (parsed.path === '/' && parsed.data) {
-                    currentPresence = parsed.data;
-                } else if (parsed.path === '/' && parsed.data === null) {
-                    currentPresence = {};
+                // Fixed: Firebase streams updates over granular paths (e.g. path: '/User_123').
+                // We construct a local copy of the full presence registry from these delta chunks.
+                if (parsed.path === '/') {
+                    localPresence = parsed.data || {};
+                } else {
+                    const key = parsed.path.replace(/^\//, '');
+                    if (parsed.data === null) {
+                        delete localPresence[key]; // Dynamic removal
+                    } else {
+                        localPresence[key] = parsed.data; // Dynamic addition/patch
+                    }
                 }
 
-                const remainingKeys = Object.keys(currentPresence);
+                const remainingKeys = Object.keys(localPresence);
 
-                // If someone was here, but now your key is either alone or presence is empty
-                if (remainingKeys.length > 0 && !remainingKeys.includes(presenceId)) {
-                    // This means WE were removed or room was cleared externally
+                // Scenario A: The room was wiped or our presence tracking object was cleared externally
+                if (remainingKeys.length === 0 || !remainingKeys.includes(presenceId)) {
                     handlePartnerLeft();
-                } else if (remainingKeys.length === 1 && remainingKeys[0] === presenceId) {
-                    // Check if a partner used to be here by inspecting if there are any messages 
-                    // or if we simply detect we are now completely alone.
+                } 
+                // Scenario B: We are the only presence token left in this room
+                else if (remainingKeys.length === 1 && remainingKeys[0] === presenceId) {
+                    // Check if chat history has logs. If yes, the other person was here and dropped out!
                     const res = await fetch(`${FB_URL}/corridor/${roomPath()}/msgs.json`);
                     const msgs = await res.json();
                     if (msgs && Object.keys(msgs).length > 0) {
-                        // There is chat history, but only 1 person left in presence. Partner dropped!
                         handlePartnerLeft();
                     }
                 }
@@ -718,7 +728,7 @@ const CORRIDOR = (() => {
         print('Type "help" for available commands');
         print('');
         
-        corridorUser = ''; corridorRoom = ''; corridorKey = null; lastMsgTS = 0;
+        corridorUser = ''; corridorRoom = ''; corridorKey = null; lastMsgTS = 0; localPresence = {};
     }
 
     // ── SSE message listener ──────────────────
