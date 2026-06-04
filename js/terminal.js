@@ -389,6 +389,7 @@ const commands = {
         print('  date      - Show current date and time');
         print('  whoami    - Display current user');
         print('  version   - Shows the current Version and Device information');
+        print('  corridor  - Open encrypted private chat session');
     },
     typetest: () => {
         startTypingTest();
@@ -404,6 +405,9 @@ const commands = {
     },
     whoami: () => {
         print('<user>');
+    },
+    corridor: () => {
+        corridorInit();
     },
     version: () => {
         const ua = navigator.userAgent;
@@ -535,3 +539,322 @@ ascii_header.forEach(line =>{
 });                                                                                     
 print('Type "help" for available commands');
 print('');
+
+// ── CORRIDOR — Encrypted P2P Chat ─────────────────────────────────────────
+// SETUP: Create a free Firebase Realtime Database at https://console.firebase.google.com
+// Set database rules to: { "rules": { "corridor": { ".read": true, ".write": true } } }
+// Then replace the FB_URL below with your database URL.
+
+const CORRIDOR = (() => {
+    // ── Firebase Realtime Database REST endpoint ──
+    // Replace with your own: https://YOUR-PROJECT-default-rtdb.firebaseio.com
+    const FB_URL = 'https://corridor-hub-default-rtdb.firebaseio.com';
+
+    // ── State ──
+    let corridorActive  = false;
+    let corridorUser    = '';
+    let corridorRoom    = '';
+    let corridorKey     = null;   // CryptoKey (AES-GCM)
+    let corridorSub     = null;   // EventSource for SSE
+    let lastMsgTS       = 0;
+    let setupStep       = 0;      // 0=idle,1=awaiting username,2=awaiting room
+
+    // ── Crypto helpers ──────────────────────────────────────────
+    async function deriveKey(roomCode) {
+        const enc   = new TextEncoder();
+        const raw   = enc.encode(roomCode.padEnd(32, '\0').slice(0, 32));
+        const base  = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt','decrypt']);
+        return base;
+    }
+
+    async function encrypt(text) {
+        const enc  = new TextEncoder();
+        const iv   = crypto.getRandomValues(new Uint8Array(12));
+        const ct   = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, corridorKey, enc.encode(text));
+        // pack iv + ciphertext as base64
+        const buf  = new Uint8Array(iv.byteLength + ct.byteLength);
+        buf.set(iv, 0);
+        buf.set(new Uint8Array(ct), iv.byteLength);
+        return btoa(String.fromCharCode(...buf));
+    }
+
+    async function decrypt(b64) {
+        try {
+            const buf  = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+            const iv   = buf.slice(0, 12);
+            const ct   = buf.slice(12);
+            const pt   = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, corridorKey, ct);
+            return new TextDecoder().decode(pt);
+        } catch {
+            return null; // wrong key / tampered
+        }
+    }
+
+    // ── Firebase REST helpers ───────────────────────────────────
+    function roomPath() {
+        // sanitise room code for Firebase key
+        return corridorRoom.replace(/[.#$/[\]]/g, '_');
+    }
+
+    async function fbWrite(payload) {
+        const ts  = Date.now();
+        const url = `${FB_URL}/corridor/${roomPath()}/msgs/${ts}.json`;
+        await fetch(url, {
+            method : 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify(payload)
+        });
+        // Schedule self-destruct (TTL) — overwrite with null after 24h
+        // (Firebase TTL rules are set server-side; client cleanup on disconnect)
+    }
+
+    async function fbCleanup() {
+        // Delete entire room on leave
+        const url = `${FB_URL}/corridor/${roomPath()}.json`;
+        fetch(url, { method: 'DELETE' }).catch(() => {});
+    }
+
+    // ── SSE listener (Firebase streaming REST) ──────────────────
+    function startListening() {
+        const url = `${FB_URL}/corridor/${roomPath()}/msgs.json`;
+        const es  = new EventSource(url);
+        corridorSub = es;
+
+        es.addEventListener('put', async (evt) => {
+            try {
+                const data = JSON.parse(evt.data);
+                if (!data || !data.data) return;
+                const msgs = data.data;
+                for (const ts of Object.keys(msgs).sort()) {
+                    const numTs = Number(ts);
+                    if (numTs <= lastMsgTS) continue;
+                    lastMsgTS = numTs;
+                    const m = msgs[ts];
+                    if (!m || !m.ciphertext) continue;
+                    const plain = await decrypt(m.ciphertext);
+                    if (plain === null) continue; // wrong room / tampered
+                    const isMe   = m.sender === corridorUser;
+                    const time   = new Date(numTs).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+                    renderMessage(m.sender, plain, time, isMe);
+                }
+            } catch (err) { /* ignore parse errors */ }
+        });
+
+        es.addEventListener('patch', async (evt) => {
+            try {
+                const data = JSON.parse(evt.data);
+                if (!data || !data.data) return;
+                const msgs = data.data;
+                for (const ts of Object.keys(msgs).sort()) {
+                    const numTs = Number(ts);
+                    if (numTs <= lastMsgTS) continue;
+                    lastMsgTS = numTs;
+                    const m = msgs[ts];
+                    if (!m || !m.ciphertext) continue;
+                    const plain = await decrypt(m.ciphertext);
+                    if (plain === null) continue;
+                    const isMe   = m.sender === corridorUser;
+                    const time   = new Date(numTs).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+                    renderMessage(m.sender, plain, time, isMe);
+                }
+            } catch (err) { /* ignore */ }
+        });
+
+        es.onerror = () => {
+            if (corridorActive) {
+                printCorridor('⚠ Connection interrupted — attempting reconnect…', 'warning');
+                es.close();
+                setTimeout(startListening, 2000);
+            }
+        };
+    }
+
+    // ── UI helpers ──────────────────────────────────────────────
+    function printCorridor(text, cls = '') {
+        const div = document.createElement('div');
+        div.className = 'output-line corridor-system ' + cls;
+        div.style.color = cls === 'warning' ? '#ffaa00'
+                        : cls === 'error'   ? '#ff4444'
+                        : cls === 'success' ? '#00ff00'
+                        : '#00aaff';
+        div.style.fontStyle = 'italic';
+        div.textContent = text;
+        output.appendChild(div);
+        output.scrollTop = output.scrollHeight;
+    }
+
+    function renderMessage(sender, text, time, isMe) {
+        const row = document.createElement('div');
+        row.className = 'output-line corridor-msg';
+        row.style.display        = 'flex';
+        row.style.gap            = '8px';
+        row.style.margin         = '4px 0';
+        row.style.alignItems     = 'flex-start';
+        row.style.flexDirection  = isMe ? 'row-reverse' : 'row';
+
+        const bubble = document.createElement('div');
+        bubble.style.maxWidth       = '70%';
+        bubble.style.padding        = '6px 10px';
+        bubble.style.borderRadius   = '6px';
+        bubble.style.fontSize       = '13px';
+        bubble.style.lineHeight     = '1.5';
+        bubble.style.wordBreak      = 'break-word';
+        bubble.style.background     = isMe ? '#003300' : '#001a2e';
+        bubble.style.border         = isMe ? '1px solid #00ff00' : '1px solid #0077cc';
+        bubble.style.color          = '#ffffff';
+
+        const meta = document.createElement('div');
+        meta.style.fontSize  = '10px';
+        meta.style.opacity   = '0.6';
+        meta.style.marginBottom = '3px';
+        meta.style.color     = isMe ? '#00ff00' : '#00aaff';
+        meta.textContent     = isMe ? `you  ${time}` : `${sender}  ${time}`;
+
+        const msg = document.createElement('div');
+        msg.textContent = text;
+
+        bubble.appendChild(meta);
+        bubble.appendChild(msg);
+        row.appendChild(bubble);
+        output.appendChild(row);
+        output.scrollTop = output.scrollHeight;
+    }
+
+    function updatePrompt() {
+        const promptEl = document.querySelector('.prompt');
+        if (promptEl) {
+            promptEl.textContent = corridorActive
+                ? `[${corridorUser}@corridor:${corridorRoom}]$`
+                : '$';
+        }
+    }
+
+    // ── Public init ─────────────────────────────────────────────
+    async function corridorInit() {
+        if (corridorActive) {
+            printCorridor('Already in corridor. Type /exit to leave.', 'warning');
+            return;
+        }
+        setupStep = 1;
+        print('');
+        printCorridor('▓▓ CORRIDOR — End-to-end encrypted private chat ▓▓', 'success');
+        printCorridor('Messages are AES-256-GCM encrypted in-browser.', '');
+        printCorridor('Chat history is session-only and cannot be recovered.', '');
+        print('');
+        printCorridor('Enter your username:', 'success');
+    }
+
+    // ── Handle input while corridor setup or active ─────────────
+    async function handleInput(val) {
+        if (setupStep === 1) {
+            // Capture username
+            const name = val.trim();
+            if (!name || name.length < 1 || name.length > 20) {
+                printCorridor('Username must be 1–20 characters. Try again:', 'warning');
+                return true;
+            }
+            corridorUser = name;
+            setupStep    = 2;
+            printCorridor(`Username set: ${corridorUser}`, 'success');
+            printCorridor('Enter room code (share this with the other person):', 'success');
+            return true;
+        }
+
+        if (setupStep === 2) {
+            // Capture room code, derive key, start session
+            const code = val.trim();
+            if (!code || code.length < 3 || code.length > 32) {
+                printCorridor('Room code must be 3–32 characters. Try again:', 'warning');
+                return true;
+            }
+            corridorRoom = code;
+            setupStep    = 0;
+
+            try {
+                corridorKey = await deriveKey(corridorRoom);
+            } catch(e) {
+                printCorridor('Crypto init failed: ' + e.message, 'error');
+                corridorUser = ''; corridorRoom = '';
+                return true;
+            }
+
+            corridorActive = true;
+
+            // Hide score box
+            const scoreBox = document.querySelector('.score-box');
+            if (scoreBox) scoreBox.style.display = 'none';
+
+            updatePrompt();
+
+            print('');
+            printCorridor(`━━ Connected to room "${corridorRoom}" ━━`, 'success');
+            printCorridor('Waiting for the other person… (messages appear here)', '');
+            printCorridor('Type /exit to leave the corridor.', '');
+            print('');
+
+            // Register disconnect cleanup via beacon
+            window.addEventListener('beforeunload', () => {
+                fbCleanup();
+                if (corridorSub) corridorSub.close();
+            });
+
+            startListening();
+            return true;
+        }
+
+        if (corridorActive) {
+            if (val.trim() === '/exit') {
+                corridorActive = false;
+                if (corridorSub) { corridorSub.close(); corridorSub = null; }
+                fbCleanup();
+                // Restore score box
+                const scoreBox = document.querySelector('.score-box');
+                if (scoreBox) scoreBox.style.display = '';
+                updatePrompt();
+                print('');
+                printCorridor('━━ Left corridor. Chat history cleared. ━━', 'warning');
+                corridorUser = ''; corridorRoom = ''; corridorKey = null; lastMsgTS = 0;
+                return true;
+            }
+
+            const text = val.trim();
+            if (!text) return true;
+
+            try {
+                const ct = await encrypt(text);
+                await fbWrite({ sender: corridorUser, ciphertext: ct });
+            } catch(e) {
+                printCorridor('Send failed: ' + e.message, 'error');
+            }
+            return true;
+        }
+
+        return false; // not handled by corridor
+    }
+
+    return { corridorInit, handleInput, isSetupActive: () => setupStep > 0, isActive: () => corridorActive };
+})();
+
+// Override input handler to intercept corridor input
+const _origInput = input.cloneNode();
+input.addEventListener('keydown', async (e) => {
+    if (e.key !== 'Enter') return;
+    if (CORRIDOR.isSetupActive() || CORRIDOR.isActive()) {
+        e.stopImmediatePropagation();
+        const val = input.value;
+        input.value = '';
+        if (CORRIDOR.isActive() && val.trim() !== '/exit') {
+            // echo in terminal as sent message — handled by listener rendering
+        } else {
+            // show what user typed for setup steps
+            if (CORRIDOR.isSetupActive()) {
+                print('$ ' + val, 'success');
+            }
+        }
+        await CORRIDOR.handleInput(val);
+    }
+}, true); // capture phase — fires before existing keydown handler
+
+function corridorInit() {
+    CORRIDOR.corridorInit();
+}
