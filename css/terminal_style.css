@@ -327,3 +327,13 @@ body {
     padding: 2px 0;
     font-size: 12px;
 }
+@media (max-width: 768px) {
+    .sidebar {
+        display: none;
+        width: 0;
+    }
+    .terminal-container {
+        width: auto;
+    }
+
+}
