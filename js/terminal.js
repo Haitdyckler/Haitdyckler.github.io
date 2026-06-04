@@ -547,7 +547,6 @@ print('');
 
 const CORRIDOR = (() => {
     // ── Firebase Realtime Database REST endpoint ──
-    // Replace with your own: https://YOUR-PROJECT-default-rtdb.firebaseio.com
     const FB_URL = 'https://corridor-chat-room-default-rtdb.asia-southeast1.firebasedatabase.app/';
 
     // ── State ──
@@ -555,23 +554,23 @@ const CORRIDOR = (() => {
     let corridorUser    = '';
     let corridorRoom    = '';
     let corridorKey     = null;   // CryptoKey (AES-GCM)
-    let corridorSub     = null;   // EventSource for SSE
+    let corridorSub     = null;   // EventSource for SSE messages
+    let presenceWatchEs = null;   // EventSource for SSE presence
     let lastMsgTS       = 0;
     let setupStep       = 0;      // 0=idle,1=awaiting username,2=awaiting room
+    let presenceId      = null;
 
     // ── Crypto helpers ──────────────────────────────────────────
     async function deriveKey(roomCode) {
         const enc   = new TextEncoder();
         const raw   = enc.encode(roomCode.padEnd(32, '\0').slice(0, 32));
-        const base  = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt','decrypt']);
-        return base;
+        return await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt','decrypt']);
     }
 
     async function encrypt(text) {
         const enc  = new TextEncoder();
         const iv   = crypto.getRandomValues(new Uint8Array(12));
         const ct   = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, corridorKey, enc.encode(text));
-        // pack iv + ciphertext as base64
         const buf  = new Uint8Array(iv.byteLength + ct.byteLength);
         buf.set(iv, 0);
         buf.set(new Uint8Array(ct), iv.byteLength);
@@ -586,18 +585,14 @@ const CORRIDOR = (() => {
             const pt   = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, corridorKey, ct);
             return new TextDecoder().decode(pt);
         } catch {
-            return null; // wrong key / tampered
+            return null;
         }
     }
 
     // ── Firebase REST helpers ───────────────────────────────────
     function roomPath() {
-        // sanitise room code for Firebase key
         return corridorRoom.replace(/[.#$/[\]]/g, '_');
     }
-
-    let presenceId = null;
-    let presenceWatchEs = null;
 
     async function fbWrite(payload) {
         const ts  = Date.now();
@@ -611,63 +606,129 @@ const CORRIDOR = (() => {
 
     async function fbWipeRoom() {
         const roomUrl = `${FB_URL}/corridor/${roomPath()}.json`;
-        fetch(roomUrl, { method: 'DELETE' }).catch(() => {});
+        try {
+            await fetch(roomUrl, { method: 'DELETE' });
+        } catch (e) { /* ignore */ }
     }
 
-    async function fbCleanup() {
-        // Remove this user's presence entry
+    async function fbRemovePresenceSync() {
         if (presenceId) {
-            const presUrl = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
-            try { await fetch(presUrl, { method: 'DELETE' }); } catch { /* ignore */ }
+            const url = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json?_method=DELETE`;
+            navigator.sendBeacon(url, new Blob(['null'], { type: 'application/json' }));
+        }
+    }
+
+    async function fbRemovePresenceAsync() {
+        if (presenceId) {
+            const url = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
+            try { await fetch(url, { method: 'DELETE' }); } catch(e){}
             presenceId = null;
         }
-        if (presenceWatchEs) { presenceWatchEs.close(); presenceWatchEs = null; }
-        // If no one is left in the room, wipe everything
-        try {
-            const res  = await fetch(`${FB_URL}/corridor/${roomPath()}/presence.json`);
-            const data = await res.json();
-            if (!data || Object.keys(data).length === 0) fbWipeRoom();
-        } catch { fbWipeRoom(); }
     }
 
-    // Register presence and watch for the room becoming empty
-    async function fbRegisterPresence() {
+    // Register presence and listen for partner disconnecting
+    async function fbRegisterAndWatchPresence() {
         presenceId = `${corridorUser}_${Date.now()}`;
         const presUrl = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
+        
         await fetch(presUrl, {
             method : 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body   : JSON.stringify({ user: corridorUser, joined: Date.now() })
         });
 
-        // Watch the presence node — wipe room the moment it hits 0
+        // Watch presence adjustments
         presenceWatchEs = new EventSource(`${FB_URL}/corridor/${roomPath()}/presence.json`);
-        const onPresenceData = async (evt) => {
+        
+        const handlePresenceChange = async (evt) => {
+            if (!corridorActive) return;
             try {
-                const d = JSON.parse(evt.data);
-                const entries = d.data ? Object.keys(d.data) : [];
-                if (entries.length === 0) {
-                    fbWipeRoom();
-                    presenceWatchEs.close();
-                    presenceWatchEs = null;
-                    if (corridorActive) {
-                        printCorridor('━━ Other user left — room wiped. Type /exit to close. ━━', 'warning');
+                const parsed = JSON.parse(evt.data);
+                if (!parsed) return;
+
+                // Evaluate the current state of presence keys remaining
+                let currentPresence = {};
+                if (parsed.path === '/' && parsed.data) {
+                    currentPresence = parsed.data;
+                } else if (parsed.path === '/' && parsed.data === null) {
+                    currentPresence = {};
+                }
+
+                const remainingKeys = Object.keys(currentPresence);
+
+                // If someone was here, but now your key is either alone or presence is empty
+                if (remainingKeys.length > 0 && !remainingKeys.includes(presenceId)) {
+                    // This means WE were removed or room was cleared externally
+                    handlePartnerLeft();
+                } else if (remainingKeys.length === 1 && remainingKeys[0] === presenceId) {
+                    // Check if a partner used to be here by inspecting if there are any messages 
+                    // or if we simply detect we are now completely alone.
+                    const res = await fetch(`${FB_URL}/corridor/${roomPath()}/msgs.json`);
+                    const msgs = await res.json();
+                    if (msgs && Object.keys(msgs).length > 0) {
+                        // There is chat history, but only 1 person left in presence. Partner dropped!
+                        handlePartnerLeft();
                     }
                 }
-            } catch { /* ignore */ }
+            } catch (err) { /* ignore parsing drops */ }
         };
-        presenceWatchEs.addEventListener('put',   onPresenceData);
-        presenceWatchEs.addEventListener('patch', onPresenceData);
+
+        presenceWatchEs.addEventListener('put', handlePresenceChange);
+        presenceWatchEs.addEventListener('patch', handlePresenceChange);
     }
 
-    // ── SSE listener (Firebase streaming REST) ──────────────────
+    async function handlePartnerLeft() {
+        if (!corridorActive) return;
+        
+        // 1. Wipe database history instantly
+        await fbWipeRoom();
+
+        // 2. Clear terminal output completely
+        clear();
+
+        // 3. Notify the user
+        printCorridor('━━ The other user has left the room. ━━', 'warning');
+        printCorridor('━━ Chat history has been completely wiped from Firebase and Terminal. ━━', 'warning');
+        
+        // Clean up engineering states
+        exitCorridorCleanly(false); 
+    }
+
+    function exitCorridorCleanly(shouldWipeDatabase = true) {
+        corridorActive = false;
+        
+        if (corridorSub) { corridorSub.close(); corridorSub = null; }
+        if (presenceWatchEs) { presenceWatchEs.close(); presenceWatchEs = null; }
+        
+        if (shouldWipeDatabase) {
+            fbRemovePresenceAsync().then(() => {
+                fbWipeRoom();
+            });
+        } else {
+            presenceId = null;
+        }
+
+        // Restore score box UI
+        const scoreBox = document.querySelector('.score-box');
+        if (scoreBox) scoreBox.style.display = '';
+        
+        updatePrompt();
+        
+        print('');
+        print('Type "help" for available commands');
+        print('');
+        
+        corridorUser = ''; corridorRoom = ''; corridorKey = null; lastMsgTS = 0;
+    }
+
+    // ── SSE message listener ──────────────────
     async function processMessage(ts, m) {
         const numTs = Number(ts);
         if (numTs <= lastMsgTS) return;
         lastMsgTS = numTs;
         if (!m || !m.ciphertext) return;
         const plain = await decrypt(m.ciphertext);
-        if (plain === null) return; // wrong room / tampered
+        if (plain === null) return; 
         const isMe = m.sender === corridorUser;
         const time = new Date(numTs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         renderMessage(m.sender, plain, time, isMe);
@@ -675,47 +736,33 @@ const CORRIDOR = (() => {
 
     function startListening() {
         const url = `${FB_URL}/corridor/${roomPath()}/msgs.json`;
-        const es  = new EventSource(url);
-        corridorSub = es;
+        corridorSub = new EventSource(url);
 
-        es.addEventListener('put', async (evt) => {
+        corridorSub.addEventListener('put', async (evt) => {
             try {
                 const data = JSON.parse(evt.data);
-                if (!data || data.data === null || data.data === undefined) return;
-
-                // Firebase sends two shapes for 'put':
-                //   1. Initial snapshot: path="/" data={ts: msgObj, ...}  (map of all messages)
-                //   2. New single write: path="/timestamp"  data={sender, ciphertext}
+                if (!data || data.data === null || data.data === undefined) {
+                    // If data becomes null, room was wiped! Clear screen.
+                    if (data && data.path === '/') {
+                        clear();
+                    }
+                    return;
+                }
                 if (data.path === '/') {
-                    // Full snapshot — iterate the map
                     const msgs = data.data;
                     for (const ts of Object.keys(msgs).sort()) {
                         await processMessage(ts, msgs[ts]);
                     }
                 } else {
-                    // Single message — path is the timestamp key
                     const ts = data.path.replace(/^\//, '');
                     await processMessage(ts, data.data);
                 }
-            } catch (err) { /* ignore parse errors */ }
+            } catch (err) { }
         });
 
-        es.addEventListener('patch', async (evt) => {
-            try {
-                const data = JSON.parse(evt.data);
-                if (!data || !data.data) return;
-                // patch delivers a flat {timestamp: msgObj} map
-                const msgs = data.data;
-                for (const ts of Object.keys(msgs).sort()) {
-                    await processMessage(ts, msgs[ts]);
-                }
-            } catch (err) { /* ignore */ }
-        });
-
-        es.onerror = () => {
+        corridorSub.onerror = () => {
             if (corridorActive) {
-                printCorridor('⚠ Connection interrupted — attempting reconnect…', 'warning');
-                es.close();
+                corridorSub.close();
                 setTimeout(startListening, 2000);
             }
         };
@@ -799,7 +846,6 @@ const CORRIDOR = (() => {
     // ── Handle input while corridor setup or active ─────────────
     async function handleInput(val) {
         if (setupStep === 1) {
-            // Capture username
             const name = val.trim();
             if (!name || name.length < 1 || name.length > 20) {
                 printCorridor('Username must be 1–20 characters. Try again:', 'warning');
@@ -813,7 +859,6 @@ const CORRIDOR = (() => {
         }
 
         if (setupStep === 2) {
-            // Capture room code, derive key, start session
             const code = val.trim();
             if (!code || code.length < 3 || code.length > 32) {
                 printCorridor('Room code must be 3–32 characters. Try again:', 'warning');
@@ -832,7 +877,6 @@ const CORRIDOR = (() => {
 
             corridorActive = true;
 
-            // Hide score box
             const scoreBox = document.querySelector('.score-box');
             if (scoreBox) scoreBox.style.display = 'none';
 
@@ -844,19 +888,10 @@ const CORRIDOR = (() => {
             printCorridor('Type /exit to leave the corridor.', '');
             print('');
 
-            // Register presence (tracks who's in the room, triggers wipe when empty)
-            await fbRegisterPresence();
+            await fbRegisterAndWatchPresence();
 
-            // On tab close / navigation — synchronously remove presence via sendBeacon
-            window.addEventListener('beforeunload', () => {
-                if (presenceId) {
-                    // sendBeacon survives tab close; DELETE isn't supported so POST a null overwrite
-                    const presUrl = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
-                    navigator.sendBeacon(presUrl + '?_method=DELETE', new Blob(['null'], { type: 'application/json' }));
-                }
-                if (corridorSub) corridorSub.close();
-                if (presenceWatchEs) presenceWatchEs.close();
-            });
+            // Synchronous unload fallback
+            window.addEventListener('beforeunload', fbRemovePresenceSync);
 
             startListening();
             return true;
@@ -864,16 +899,9 @@ const CORRIDOR = (() => {
 
         if (corridorActive) {
             if (val.trim() === '/exit') {
-                corridorActive = false;
-                if (corridorSub) { corridorSub.close(); corridorSub = null; }
-                fbCleanup();
-                // Restore score box
-                const scoreBox = document.querySelector('.score-box');
-                if (scoreBox) scoreBox.style.display = '';
-                updatePrompt();
-                print('');
+                clear();
                 printCorridor('━━ Left corridor. Chat history cleared. ━━', 'warning');
-                corridorUser = ''; corridorRoom = ''; corridorKey = null; lastMsgTS = 0;
+                exitCorridorCleanly(true);
                 return true;
             }
 
@@ -889,7 +917,7 @@ const CORRIDOR = (() => {
             return true;
         }
 
-        return false; // not handled by corridor
+        return false;
     }
 
     return { corridorInit, handleInput, isSetupActive: () => setupStep > 0, isActive: () => corridorActive };
