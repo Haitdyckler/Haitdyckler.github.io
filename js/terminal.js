@@ -559,6 +559,7 @@ const CORRIDOR = (() => {
     let lastMsgTS       = 0;
     let setupStep       = 0;      // 0=idle,1=awaiting username,2=awaiting room
     let presenceId      = null;
+    let partnerHasJoined = false;
 
     // ── Crypto helpers ──────────────────────────────────────────
     async function deriveKey(roomCode) {
@@ -628,6 +629,7 @@ const CORRIDOR = (() => {
 
     // Register presence and listen for partner disconnecting
     async function fbRegisterAndWatchPresence() {
+        partnerHasJoined = false; // Reset whenever entering a new room
         presenceId = `${corridorUser}_${Date.now()}`;
         const presUrl = `${FB_URL}/corridor/${roomPath()}/presence/${presenceId}.json`;
         
@@ -637,7 +639,6 @@ const CORRIDOR = (() => {
             body   : JSON.stringify({ user: corridorUser, joined: Date.now() })
         });
 
-        // Watch presence adjustments
         presenceWatchEs = new EventSource(`${FB_URL}/corridor/${roomPath()}/presence.json`);
         
         const handlePresenceChange = async (evt) => {
@@ -646,29 +647,31 @@ const CORRIDOR = (() => {
                 const parsed = JSON.parse(evt.data);
                 if (!parsed) return;
 
-                // Evaluate the current state of presence keys remaining
                 let currentPresence = {};
                 if (parsed.path === '/' && parsed.data) {
                     currentPresence = parsed.data;
                 } else if (parsed.path === '/' && parsed.data === null) {
                     currentPresence = {};
+                } else if (parsed.path && parsed.path !== '/') {
+                    // Handle granular updates if Firebase pushes them
+                    const res = await fetch(`${FB_URL}/corridor/${roomPath()}/presence.json`);
+                    currentPresence = await res.json() || {};
                 }
 
                 const remainingKeys = Object.keys(currentPresence);
 
-                // If someone was here, but now your key is either alone or presence is empty
+                // If there's more than 1 person in the room, the partner is present!
+                if (remainingKeys.length > 1) {
+                    partnerHasJoined = true;
+                }
+
+                // If we were explicitly removed by a database clear
                 if (remainingKeys.length > 0 && !remainingKeys.includes(presenceId)) {
-                    // This means WE were removed or room was cleared externally
                     handlePartnerLeft();
-                } else if (remainingKeys.length === 1 && remainingKeys[0] === presenceId) {
-                    // Check if a partner used to be here by inspecting if there are any messages 
-                    // or if we simply detect we are now completely alone.
-                    const res = await fetch(`${FB_URL}/corridor/${roomPath()}/msgs.json`);
-                    const msgs = await res.json();
-                    if (msgs && Object.keys(msgs).length > 0) {
-                        // There is chat history, but only 1 person left in presence. Partner dropped!
-                        handlePartnerLeft();
-                    }
+                } 
+                // Only trigger "partner left" if they were actually here in the first place!
+                else if (partnerHasJoined && remainingKeys.length === 1 && remainingKeys[0] === presenceId) {
+                    handlePartnerLeft();
                 }
             } catch (err) { /* ignore parsing drops */ }
         };
@@ -695,20 +698,33 @@ const CORRIDOR = (() => {
     }
 
     function exitCorridorCleanly(shouldWipeDatabase = true) {
+        // 1. Immediately kill active status so listeners stop processing incoming actions
         corridorActive = false;
         
-        if (corridorSub) { corridorSub.close(); corridorSub = null; }
-        if (presenceWatchEs) { presenceWatchEs.close(); presenceWatchEs = null; }
+        // 2. Tear down network streams immediately before messing with database data
+        if (corridorSub) { 
+            corridorSub.close(); 
+            corridorSub = null; 
+        }
+        if (presenceWatchEs) { 
+            presenceWatchEs.close(); 
+            presenceWatchEs = null; 
+        }
+
+        // 3. Remove the unload listener so it doesn't fire duplicate requests later
+        window.removeEventListener('beforeunload', fbRemovePresenceSync);
         
+        // 4. Handle database teardown orchestrations safely
         if (shouldWipeDatabase) {
             fbRemovePresenceAsync().then(() => {
                 fbWipeRoom();
+                presenceId = null; // Clean up ID after successful removal string generation
             });
         } else {
             presenceId = null;
         }
 
-        // Restore score box UI
+        // 5. Restore standard terminal sidebar UI configurations
         const scoreBox = document.querySelector('.score-box');
         if (scoreBox) scoreBox.style.display = '';
         
@@ -718,7 +734,12 @@ const CORRIDOR = (() => {
         print('Type "help" for available commands');
         print('');
         
-        corridorUser = ''; corridorRoom = ''; corridorKey = null; lastMsgTS = 0;
+        // 6. Completely reset variables for pristine initialization next time
+        corridorUser = ''; 
+        corridorRoom = ''; 
+        corridorKey = null; 
+        lastMsgTS = 0; 
+        partnerHasJoined = false;
     }
 
     // ── SSE message listener ──────────────────
