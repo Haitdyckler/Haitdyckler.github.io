@@ -541,6 +541,10 @@ print('Type "help" for available commands');
 print('');
 
 // ── CORRIDOR — Encrypted P2P Chat ─────────────────────────────────────────
+// SETUP: Create a free Firebase Realtime Database at https://console.firebase.google.com
+// Set database rules to: { "rules": { "corridor": { ".read": true, ".write": true } } }
+// Then replace the FB_URL below with your database URL.
+
 const CORRIDOR = (() => {
     // ── Firebase Realtime Database REST endpoint ──
     const FB_URL = 'https://corridor-chat-room-default-rtdb.asia-southeast1.firebasedatabase.app/';
@@ -918,3 +922,27 @@ const CORRIDOR = (() => {
 
     return { corridorInit, handleInput, isSetupActive: () => setupStep > 0, isActive: () => corridorActive };
 })();
+
+// Override input handler to intercept corridor input
+const _origInput = input.cloneNode();
+input.addEventListener('keydown', async (e) => {
+    if (e.key !== 'Enter') return;
+    if (CORRIDOR.isSetupActive() || CORRIDOR.isActive()) {
+        e.stopImmediatePropagation();
+        const val = input.value;
+        input.value = '';
+        if (CORRIDOR.isActive() && val.trim() !== '/exit') {
+            // echo in terminal as sent message — handled by listener rendering
+        } else {
+            // show what user typed for setup steps
+            if (CORRIDOR.isSetupActive()) {
+                print('$ ' + val, 'success');
+            }
+        }
+        await CORRIDOR.handleInput(val);
+    }
+}, true); // capture phase — fires before existing keydown handler
+
+function corridorInit() {
+    CORRIDOR.corridorInit();
+}
