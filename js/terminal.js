@@ -741,13 +741,26 @@ const CORRIDOR = (() => {
         corridorSub.addEventListener('put', async (evt) => {
             try {
                 const data = JSON.parse(evt.data);
-                if (!data || data.data === null || data.data === undefined) {
-                    // If data becomes null, room was wiped! Clear screen.
+                
+                // ── 1. DETECT DATABASE WIPE ──
+                // When the first user exits and deletes the room path, Firebase sends
+                // a payload where data is null and the path is the root ("/")
+                if (!data || data.data === null) {
                     if (data && data.path === '/') {
-                        clear();
+                        // Clear the local terminal for the second user
+                        clear(); 
+                        
+                        // Notify the second user and drop them out safely
+                        printCorridor('━━ The other user has left the corridor. ━━', 'warning');
+                        printCorridor('━━ Chat history has been completely wiped from Firebase and Terminal. ━━', 'warning');
+                        
+                        // Exit the corridor module without attempting to wipe database again
+                        exitCorridorCleanly(false); 
                     }
                     return;
                 }
+
+                // ── 2. PROCESS REGULAR INCOMING MESSAGES ──
                 if (data.path === '/') {
                     const msgs = data.data;
                     for (const ts of Object.keys(msgs).sort()) {
@@ -757,7 +770,9 @@ const CORRIDOR = (() => {
                     const ts = data.path.replace(/^\//, '');
                     await processMessage(ts, data.data);
                 }
-            } catch (err) { }
+            } catch (err) {
+                // Ignore structural parsing drops
+            }
         });
 
         corridorSub.onerror = () => {
