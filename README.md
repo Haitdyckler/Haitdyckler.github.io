@@ -29,21 +29,21 @@ A personal portfolio built as a pixel-art, game-inspired website instead of a ty
 
 ```
 .
-├── index.html              # Desktop-style home page
+├── index.html               # Desktop-style home page
 ├── startscreen.html         # Walkable arcade hub (entry point to other pages)
 ├── character-select.html    # Choose your sprite/character
 ├── createsprite.html        # Pixel sprite creator
-├── gallery.html              # Public sprite gallery
-├── game.html                  # Pixel Runner mini-game
-├── terminal.html              # Terminal hub (incl. "corridor" encrypted chat)
-├── drums.html                  # Interactive drum kit
-├── projects.html                # Featured project write-ups
-├── about.html                     # About page
-├── contact.html                    # Contact page
-├── resume.html                      # Resume page
-├── assets/                           # Images, sprites, resume PDFs
-├── css/                               # Stylesheets (per-page + shared)
-└── js/                                 # Scripts (per-page logic + terminal.js)
+├── gallery.html             # Public sprite gallery
+├── game.html                # Pixel Runner mini-game
+├── terminal.html            # Terminal hub (incl. "corridor" encrypted chat)
+├── drums.html               # Interactive drum kit
+├── projects.html            # Featured project write-ups
+├── about.html               # About page
+├── contact.html             # Contact page
+├── resume.html              # Resume page
+├── assets/                  # Images, sprites, resume PDFs
+├── css/                     # Stylesheets (per-page + shared)
+└── js/                      # Scripts (per-page logic + terminal.js)
 ```
 
 ## Running Locally
